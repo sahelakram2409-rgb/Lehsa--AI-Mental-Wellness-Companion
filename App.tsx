@@ -11,6 +11,7 @@ import ChatScreen from './screens/ChatScreen';
 import BreatheScreen from './screens/BreatheScreen';
 import GrowthScreen from './screens/GrowthScreen';
 import MusicScreen from './screens/MusicScreen';
+import ProfileScreen from './screens/ProfileScreen';
 import BottomNav from './components/BottomNav';
 import GlobalMusicPlayer from './components/GlobalMusicPlayer';
 import GuidedTour from './components/GuidedTour';
@@ -23,16 +24,18 @@ const screens: Record<Screen, React.FC> = {
   [Screen.Meditation]: BreatheScreen,
   [Screen.Growth]: GrowthScreen,
   [Screen.Music]: MusicScreen,
+  [Screen.Profile]: ProfileScreen,
 };
 
 const screenThemes: Record<Screen, string> = {
     [Screen.Home]: 'day-mode',
     [Screen.Journal]: 'forest-mode',
     [Screen.Journey]: 'sunset-mode',
-    [Screen.Chat]: 'night-mode',
+    [Screen.Music]: 'starlight-mode',
     [Screen.Meditation]: 'ocean-mode',
     [Screen.Growth]: 'cosmic-mode',
-    [Screen.Music]: 'starlight-mode',
+    [Screen.Chat]: 'night-mode',
+    [Screen.Profile]: 'sunrise-mode',
 };
 
 const ANIMATION_DURATION = 400; // Must match CSS animation duration
@@ -44,6 +47,7 @@ const AppContent: React.FC = () => {
         isOnboardingComplete, 
         goals,
         markReminderAsShown,
+        globalTheme,
     } = useAppContext();
     const [showSplash, setShowSplash] = useState(true);
     const [isFadingOut, setIsFadingOut] = useState(false);
@@ -187,11 +191,12 @@ const AppContent: React.FC = () => {
         screensToRender.push(transitionInfo.previousScreen);
     }
     
-    const currentTheme = screenThemes[activeScreen];
+    const effectiveTheme = globalTheme || screenThemes[activeScreen];
+    const backgroundClass = `${effectiveTheme}-bg`;
 
     return (
         <div 
-            className={`h-full w-full font-sans relative ${currentTheme}`}
+            className={`h-full w-full font-sans relative ${effectiveTheme}`}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
@@ -201,8 +206,8 @@ const AppContent: React.FC = () => {
                     const ScreenComponent = screens[screen];
                     const isCurrent = screen === transitionInfo.currentScreen;
                     const isPrevious = screen === transitionInfo.previousScreen;
-                    const themeForThisScreen = screenThemes[screen];
-                    const backgroundClassForThisScreen = `${themeForThisScreen}-bg`;
+                    
+                    const screenTheme = globalTheme || screenThemes[screen];
 
                     let animationClass = '';
                     if (isCurrent && transitionInfo.direction !== 'none') {
@@ -214,7 +219,7 @@ const AppContent: React.FC = () => {
                     return (
                         <div
                             key={screen}
-                            className={`absolute inset-0 ${animationClass} ${themeForThisScreen} ${backgroundClassForThisScreen}`}
+                            className={`absolute inset-0 ${animationClass} ${screenTheme} ${screenTheme}-bg`}
                             style={{ 
                                 pointerEvents: isCurrent ? 'auto' : 'none',
                                 zIndex: isCurrent ? 2 : 1

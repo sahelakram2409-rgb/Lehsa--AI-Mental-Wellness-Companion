@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { Goal } from '../types';
-import { PinIcon, TrashIcon, BellIcon, PlusIcon, ChevronRightIcon } from '../components/Icons';
+import { PinIcon, TrashIcon, BellIcon, PlusIcon, ChevronRightIcon, FireIcon, StarIcon } from '../components/Icons';
 
 // Helper function to check if a date is today
 const isToday = (isoDate?: string) => {
@@ -23,7 +23,7 @@ const CosmicBackground = React.memo(() => {
                     animationDelay: `${Math.random() * 30}s`, animationDuration: `${20 + Math.random() * 20}s`
                 }}/>
             ))}
-            <div className="absolute top-1/4 left-1/4 w-1/2 h-1/2 bg-indigo-500/10 rounded-full filter blur-3xl animate-soft-glow"></div>
+            <div className="absolute top-1/4 left-1/4 w-1/2 h-1/2 rounded-full filter blur-3xl animate-soft-glow" style={{ backgroundColor: 'rgba(var(--accent-color-rgb), 0.1)'}}></div>
             <div className="absolute bottom-1/4 right-1/4 w-1/3 h-1/3 bg-purple-500/10 rounded-full filter blur-3xl animate-soft-glow animation-delay-4000"></div>
         </>
     );
@@ -114,13 +114,15 @@ const GrowthScreen: React.FC = () => {
             }
             
             if (goal.type === 'daily') {
+                const isCompleted = isToday(goal.lastCompleted);
                 return (
                     <button 
                         onClick={() => toggleDailyGoalCompletion(goal.goalName)}
-                        className={`w-6 h-6 rounded-full flex items-center justify-center mr-3 flex-shrink-0 border-2 transition-all duration-300 ${isToday(goal.lastCompleted) ? 'bg-indigo-400 border-indigo-400' : 'border-white/50 hover:border-white'}`}
+                        className={`w-6 h-6 rounded-full flex items-center justify-center mr-3 flex-shrink-0 border-2 transition-all duration-300 ${!isCompleted ? 'border-white/50 hover:border-white' : ''}`}
+                        style={{ backgroundColor: isCompleted ? 'var(--accent-color)' : 'transparent', borderColor: isCompleted ? 'var(--accent-color)' : '' }}
                         aria-label={`Mark ${goal.goalName} as completed for today`}
                     >
-                        {isToday(goal.lastCompleted) && <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                        {isCompleted && <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                     </button>
                 );
             }
@@ -170,7 +172,19 @@ const GrowthScreen: React.FC = () => {
                             <span>{progressData.daysRemaining} days left</span>
                         </div>
                         <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
-                            <div className="bg-indigo-400 h-full rounded-full transition-all duration-500 ease-out" style={{ width: `${progressData.progress}%` }}></div>
+                            <div className="h-full rounded-full transition-all duration-500 ease-out" style={{ width: `${progressData.progress}%`, backgroundColor: 'var(--accent-color)' }}></div>
+                        </div>
+                    </div>
+                )}
+                {goal.type === 'daily' && goal.status === 'Active' && (
+                    <div className="mt-2.5 pl-9 w-full flex items-center space-x-4 text-xs font-semibold" style={{ color: 'var(--accent-color)' }}>
+                        <div className="flex items-center space-x-1" title="Current Streak">
+                            <FireIcon className="w-4 h-4 text-orange-400" />
+                            <span>{goal.currentStreak || 0} Days</span>
+                        </div>
+                        <div className="flex items-center space-x-1 opacity-80" title="Longest Streak">
+                            <StarIcon className="w-4 h-4 text-yellow-300" />
+                            <span>{goal.longestStreak || 0} Days</span>
                         </div>
                     </div>
                 )}
@@ -179,7 +193,7 @@ const GrowthScreen: React.FC = () => {
     };
 
     return (
-        <div className="h-full w-full flex flex-col p-6 pt-10 relative overflow-x-hidden text-[--text-primary]">
+        <div className="h-full w-full flex flex-col p-6 relative overflow-x-hidden text-[--text-primary]" style={{ paddingTop: `calc(2.5rem + env(safe-area-inset-top, 0px))` }}>
              <div className="absolute inset-0 z-0 pointer-events-none">
                 <CosmicBackground />
             </div>
@@ -189,7 +203,7 @@ const GrowthScreen: React.FC = () => {
                 <h1 className="font-sans text-3xl font-bold opacity-90 text-[--text-header]">Personal Growth</h1>
             </header>
             
-            <main className="z-10 flex-grow flex flex-col w-full max-w-md mx-auto overflow-y-auto pb-28 pr-1">
+            <main className="z-10 flex-grow flex flex-col w-full max-w-md mx-auto overflow-y-auto pr-1" style={{ paddingBottom: `calc(7rem + env(safe-area-inset-bottom, 0px))` }}>
                 <div data-no-swipe="true" className="glassmorphism rounded-3xl p-4 mb-6 shadow-lg text-[--text-on-glass]">
                     <h3 className="font-sans font-semibold text-center text-lg mb-3">Set a New Intention</h3>
                     <div className="flex space-x-2">
@@ -199,30 +213,32 @@ const GrowthScreen: React.FC = () => {
                             onChange={(e) => setNewGoal(e.target.value)}
                             onKeyPress={e => e.key === 'Enter' && handleAddGoal()}
                             placeholder="e.g., Read for 15 minutes"
-                            className="flex-grow p-2.5 bg-transparent border-white/20 border rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 placeholder:opacity-60 outline-none"
+                            className="flex-grow p-2.5 bg-transparent border-white/20 border rounded-lg focus:ring-2 focus:border-transparent placeholder:opacity-60 outline-none"
+                            style={{ ringColor: 'var(--accent-color)' } as any}
                         />
                          <button
                             onClick={handleAddGoal}
                             disabled={!newGoal.trim()}
-                            className="bg-indigo-500/80 text-white px-5 rounded-lg font-semibold hover:bg-indigo-400/80 transition-all duration-300 active:scale-95 disabled:bg-gray-500/50"
+                            className="text-white px-5 rounded-lg font-semibold hover:opacity-80 transition-all duration-300 active:scale-95 disabled:bg-gray-500/50"
+                            style={{ backgroundColor: 'var(--accent-color)' }}
                         >
                             Add
                         </button>
                     </div>
                      <div className="flex justify-center space-x-4 mt-3 pt-3 border-t border-white/10">
                         <label className="flex items-center space-x-2 cursor-pointer text-sm">
-                            <input type="radio" name="goalType" value="daily" checked={goalType === 'daily'} onChange={() => setGoalType('daily')} className="form-radio text-indigo-400 bg-transparent border-white/50 focus:ring-indigo-400 focus:ring-offset-0" />
+                            <input type="radio" name="goalType" value="daily" checked={goalType === 'daily'} onChange={() => setGoalType('daily')} className="form-radio bg-transparent border-white/50 focus:ring-transparent" style={{ accentColor: 'var(--accent-color)' }} />
                             <span>Daily Habit</span>
                         </label>
                          <label className="flex items-center space-x-2 cursor-pointer text-sm">
-                            <input type="radio" name="goalType" value="single" checked={goalType === 'single'} onChange={() => setGoalType('single')} className="form-radio text-indigo-400 bg-transparent border-white/50 focus:ring-indigo-400 focus:ring-offset-0" />
+                            <input type="radio" name="goalType" value="single" checked={goalType === 'single'} onChange={() => setGoalType('single')} className="form-radio bg-transparent border-white/50 focus:ring-transparent" style={{ accentColor: 'var(--accent-color)' }} />
                             <span>Single Goal</span>
                         </label>
                     </div>
                 </div>
 
                 <div className="space-y-3">
-                    <h3 className="font-sans font-semibold text-lg text-indigo-200 pl-1">Active Intentions</h3>
+                    <h3 className="font-sans font-semibold text-lg pl-1" style={{ color: 'var(--accent-color)' }}>Active Intentions</h3>
                     {activeGoals.length > 0 ? (
                         activeGoals.map(goal => <GoalItem key={goal.goalName} goal={goal} />)
                     ) : (
@@ -239,10 +255,10 @@ const GrowthScreen: React.FC = () => {
                             onClick={() => setIsCompletedVisible(!isCompletedVisible)}
                             className="w-full flex justify-between items-center text-left glassmorphism p-3.5 rounded-xl transition-colors hover:bg-white/10"
                         >
-                            <h3 className="font-sans font-semibold text-lg text-indigo-200">
+                            <h3 className="font-sans font-semibold text-lg" style={{ color: 'var(--accent-color)' }}>
                                 Completed ({completedGoals.length})
                             </h3>
-                            <ChevronRightIcon className={`w-6 h-6 text-indigo-200 transition-transform duration-300 ${isCompletedVisible ? 'rotate-90' : 'rotate-0'}`} />
+                            <ChevronRightIcon className={`w-6 h-6 transition-transform duration-300 ${isCompletedVisible ? 'rotate-90' : 'rotate-0'}`} style={{ color: 'var(--accent-color)' }} />
                         </button>
                         <div 
                             className={`grid transition-all duration-500 ease-in-out ${isCompletedVisible ? 'grid-rows-[1fr] opacity-100 mt-3' : 'grid-rows-[0fr] opacity-0'}`}
@@ -259,8 +275,8 @@ const GrowthScreen: React.FC = () => {
 
             {reminderModalGoal && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="glassmorphism border-indigo-400/30 rounded-3xl p-6 max-w-sm w-full shadow-2xl text-white animate-modal-in">
-                        <h2 className="text-xl font-sans font-bold text-center mb-2 text-indigo-300">Set Daily Reminder</h2>
+                    <div className="glassmorphism rounded-3xl p-6 max-w-sm w-full shadow-2xl text-white animate-modal-in" style={{ borderColor: 'rgba(var(--accent-color-rgb), 0.3)'}}>
+                        <h2 className="text-xl font-sans font-bold text-center mb-2" style={{ color: 'var(--accent-color)'}}>Set Daily Reminder</h2>
                         <p className="text-center text-sm mb-4 truncate">{reminderModalGoal.goalName}</p>
                         
                         <div className="my-6">
@@ -270,12 +286,13 @@ const GrowthScreen: React.FC = () => {
                                 type="time"
                                 value={reminderTime}
                                 onChange={(e) => setReminderTime(e.target.value)}
-                                className="w-full p-2 bg-white/10 border-none rounded-lg focus:ring-2 focus:ring-indigo-400 text-white placeholder-white/60 text-center text-2xl"
+                                className="w-full p-2 bg-white/10 border-none rounded-lg focus:ring-2 text-white placeholder-white/60 text-center text-2xl"
+                                style={{ ringColor: 'var(--accent-color)' } as any}
                             />
                         </div>
                         
                         <div className="space-y-2">
-                            <button onClick={handleSetReminder} disabled={!reminderTime} className="w-full bg-indigo-500/80 text-white py-2.5 rounded-xl font-semibold hover:bg-indigo-400/80 transition-colors disabled:bg-gray-500/50">
+                            <button onClick={handleSetReminder} disabled={!reminderTime} className="w-full text-white py-2.5 rounded-xl font-semibold transition-colors disabled:bg-gray-500/50" style={{ backgroundColor: 'var(--accent-color)' }}>
                                 Set Reminder
                             </button>
                             <button onClick={handleClearReminder} className="w-full bg-white/10 text-white py-2.5 rounded-xl font-semibold hover:bg-white/20 transition-colors">

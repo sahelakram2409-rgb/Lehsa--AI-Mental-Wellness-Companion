@@ -250,7 +250,7 @@ const BreatheScreen: React.FC = () => {
   };
   
   return (
-    <div className="h-full w-full flex flex-col items-center p-6 pt-10 relative overflow-x-hidden text-[--text-primary]">
+    <div className="h-full w-full flex flex-col items-center p-6 relative overflow-x-hidden text-[--text-primary]" style={{ paddingTop: `calc(2.5rem + env(safe-area-inset-top, 0px))` }}>
         <div className="absolute inset-0 z-0 pointer-events-none">
             <BackgroundElements />
         </div>
@@ -260,7 +260,7 @@ const BreatheScreen: React.FC = () => {
             <h1 className="font-sans text-3xl font-bold opacity-90 text-[--text-header]">Guided Meditation</h1>
         </header>
 
-        <main className="z-10 flex-grow flex flex-col items-center justify-center text-center w-full max-w-md overflow-y-auto pb-28">
+        <main className="z-10 flex-grow flex flex-col items-center justify-center text-center w-full max-w-md overflow-y-auto" style={{ paddingBottom: `calc(7rem + env(safe-area-inset-bottom, 0px))` }}>
           {!activeMeditation ? (
             <div className="w-full space-y-4 animate-fade-in-up pr-2">
               <h3 className="text-2xl font-sans font-semibold mb-2 text-[--text-header]">Choose a Session</h3>

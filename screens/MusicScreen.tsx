@@ -174,14 +174,15 @@ const MusicScreen: React.FC = () => {
                         <div 
                             key={track.title} 
                             onClick={() => handlePlayTrack(selectedAlbum, track)}
-                            className={`glassmorphism p-3 rounded-lg flex items-center justify-between cursor-pointer transition-colors hover:bg-white/20 ${currentTrack?.title === track.title ? 'bg-purple-400/30' : ''}`}
+                            className={`glassmorphism p-3 rounded-lg flex items-center justify-between cursor-pointer transition-colors hover:bg-white/20 ${currentTrack?.title === track.title ? '' : ''}`}
+                            style={{ backgroundColor: currentTrack?.title === track.title ? 'rgba(var(--accent-color-rgb), 0.3)' : ''}}
                         >
                             <span className="font-semibold">{track.title}</span>
                              {currentTrack?.title === track.title && isPlaying ? (
                                 <div className="flex space-x-0.5">
-                                    <span className="w-1 h-4 bg-purple-300 animate-pulse" style={{ animationDelay: '0s' }}></span>
-                                    <span className="w-1 h-4 bg-purple-300 animate-pulse" style={{ animationDelay: '0.2s' }}></span>
-                                    <span className="w-1 h-4 bg-purple-300 animate-pulse" style={{ animationDelay: '0.4s' }}></span>
+                                    <span className="w-1 h-4 animate-pulse" style={{ animationDelay: '0s', backgroundColor: 'var(--accent-color)' }}></span>
+                                    <span className="w-1 h-4 animate-pulse" style={{ animationDelay: '0.2s', backgroundColor: 'var(--accent-color)' }}></span>
+                                    <span className="w-1 h-4 animate-pulse" style={{ animationDelay: '0.4s', backgroundColor: 'var(--accent-color)' }}></span>
                                 </div>
                              ) : (
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 opacity-70" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8.07v3.86a1 1 0 001.555.832l3.197-1.93a1 1 0 000-1.664l-3.197-1.93z" clipRule="evenodd" /></svg>
@@ -195,13 +196,13 @@ const MusicScreen: React.FC = () => {
   };
 
   return (
-    <div className="h-full w-full flex flex-col p-6 pt-10 relative overflow-x-hidden text-[--text-primary]">
+    <div className="h-full w-full flex flex-col p-6 relative overflow-x-hidden text-[--text-primary]" style={{ paddingTop: `calc(2.5rem + env(safe-area-inset-top, 0px))` }}>
       <header className="text-center z-10 mb-6 flex-shrink-0">
         <h2 className="font-light text-sm tracking-widest uppercase opacity-80 text-[--text-secondary]">The Starlight Realm</h2>
         <h1 className="font-sans text-3xl font-bold opacity-90 text-[--text-header]">Calming Music</h1>
       </header>
       
-      <main className="z-10 flex-grow w-full max-w-2xl mx-auto overflow-y-auto pb-28 pr-1">
+      <main className="z-10 flex-grow w-full max-w-2xl mx-auto overflow-y-auto pr-1" style={{ paddingBottom: `calc(7rem + env(safe-area-inset-bottom, 0px))` }}>
         {selectedAlbum ? renderTrackList() : renderAlbumGrid()}
       </main>
 

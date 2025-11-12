@@ -55,7 +55,11 @@ const GlobalMusicPlayer: React.FC = () => {
 
     return (
         <>
-            <div ref={containerRef} className="fixed bottom-24 left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-40 transition-all duration-300 ease-out global-music-player">
+            <div 
+                ref={containerRef} 
+                className="fixed left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-40 transition-all duration-300 ease-out global-music-player"
+                style={{ bottom: `calc(6rem + env(safe-area-inset-bottom, 0px))` }}
+            >
                 <div className="glassmorphism rounded-full p-2 flex items-center shadow-lg relative overflow-hidden">
                     <div className="absolute top-0 left-0 h-full bg-purple-400/20" style={{ width: `${progress}%`, transition: 'width 0.1s linear' }}></div>
                     <div className="absolute bottom-0 left-0 h-0.5 bg-purple-400/80" style={{ width: `${progress}%`, transition: 'width 0.1s linear' }}></div>

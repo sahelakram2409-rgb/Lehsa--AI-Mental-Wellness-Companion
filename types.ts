@@ -7,6 +7,7 @@ export enum Screen {
   Meditation = 'Meditation',
   Growth = 'Growth',
   Chat = 'Chat',
+  Profile = 'Profile',
 }
 
 export const screenOrder: Screen[] = [
@@ -17,6 +18,7 @@ export const screenOrder: Screen[] = [
   Screen.Meditation,
   Screen.Growth,
   Screen.Chat,
+  Screen.Profile,
 ];
 
 export interface JournalEntry {

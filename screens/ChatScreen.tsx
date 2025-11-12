@@ -120,13 +120,13 @@ const ChatScreen: React.FC = () => {
                  ))}
             </div>
 
-            <div className="relative flex flex-col h-full p-6 pt-10 z-10">
+            <div className="relative flex flex-col h-full p-6 z-10" style={{ paddingTop: `calc(2.5rem + env(safe-area-inset-top, 0px))` }}>
                 <header className="text-center mb-4 flex-shrink-0">
                     <h2 className="font-light text-sm tracking-widest opacity-80 uppercase text-[--text-secondary]">The Lunar Realm</h2>
                     <h1 className="font-sans text-3xl font-bold opacity-90 text-[--text-header]">AI Companion</h1>
                 </header>
                 
-                <div ref={scrollContainerRef} className="flex-grow overflow-y-auto mb-4 pr-2 space-y-4 pb-28">
+                <div ref={scrollContainerRef} className="flex-grow overflow-y-auto mb-4 pr-2 space-y-4" style={{ paddingBottom: `calc(7rem + env(safe-area-inset-bottom, 0px))` }}>
                     {chatMessages.map((msg) => (
                         <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in-up`}>
                             <div className={`max-w-[85%] p-3 rounded-2xl shadow-lg ${
@@ -142,9 +142,9 @@ const ChatScreen: React.FC = () => {
                          <div className="flex justify-start animate-fade-in-up">
                             <div className="max-w-[85%] p-3 rounded-2xl glassmorphism rounded-bl-lg">
                                 <div className="flex items-center space-x-2.5 px-2">
-                                    <span className="w-2 h-2 bg-indigo-200 rounded-full animate-pulsing-star" style={{ animationDelay: '0s' }}></span>
-                                    <span className="w-2 h-2 bg-indigo-200 rounded-full animate-pulsing-star" style={{ animationDelay: '0.2s' }}></span>
-                                    <span className="w-2 h-2 bg-indigo-200 rounded-full animate-pulsing-star" style={{ animationDelay: '0.4s' }}></span>
+                                    <span className="w-2 h-2 rounded-full animate-pulsing-star" style={{ animationDelay: '0s', backgroundColor: 'var(--accent-color)', opacity: 0.7 }}></span>
+                                    <span className="w-2 h-2 rounded-full animate-pulsing-star" style={{ animationDelay: '0.2s', backgroundColor: 'var(--accent-color)', opacity: 0.7 }}></span>
+                                    <span className="w-2 h-2 rounded-full animate-pulsing-star" style={{ animationDelay: '0.4s', backgroundColor: 'var(--accent-color)', opacity: 0.7 }}></span>
                                 </div>
                             </div>
                         </div>
@@ -152,12 +152,15 @@ const ChatScreen: React.FC = () => {
                     <div ref={messagesEndRef} />
                 </div>
 
-                <div className="absolute bottom-28 left-6 right-6">
+                <div className="absolute left-6 right-6" style={{ bottom: `calc(7rem + env(safe-area-inset-bottom, 0px))` }}>
                     <div className="relative">
                         <input
                             type="text" value={userInput} onChange={e => setUserInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleSend()}
                             placeholder="Message Lehsa..."
-                            className="w-full p-4 pr-12 glassmorphism border-none rounded-full focus:ring-2 focus:ring-indigo-400 text-[--text-on-glass] placeholder:text-[--text-on-glass]/60 transition-shadow duration-300 focus:shadow-[0_0_15px_rgba(129,140,248,0.5)]"
+                            className="w-full p-4 pr-12 glassmorphism border-none rounded-full focus:ring-2 focus:border-transparent text-[--text-on-glass] placeholder:text-[--text-on-glass]/60 transition-shadow duration-300"
+                            style={{ ringColor: 'var(--accent-color)', boxShadow: '0 0 15px transparent' } as any}
+                            onFocus={(e) => e.target.style.boxShadow = `0 0 15px var(--glow-color)`}
+                            onBlur={(e) => e.target.style.boxShadow = '0 0 15px transparent'}
                             disabled={isBuddyTyping}
                         />
                         <button onClick={handleSend} disabled={isBuddyTyping || userInput.trim() === ''} className="absolute right-3 top-1/2 -translate-y-1/2 opacity-80 hover:opacity-100 disabled:opacity-30 disabled:cursor-not-allowed transition-transform active:scale-90">

@@ -74,7 +74,7 @@ const JournalScreen: React.FC = () => {
   };
 
   return (
-    <div className="h-full w-full flex flex-col p-6 pt-10 relative overflow-x-hidden text-[--text-primary]">
+    <div className="h-full w-full flex flex-col p-6 relative overflow-x-hidden text-[--text-primary]" style={{ paddingTop: `calc(2.5rem + env(safe-area-inset-top, 0px))` }}>
       <div className="absolute inset-0 z-0 pointer-events-none">
         {[...Array(20)].map((_, i) => (
             <div key={i} className="absolute rounded-full animate-firefly-glow" style={{
@@ -90,13 +90,16 @@ const JournalScreen: React.FC = () => {
         <h1 className="font-sans text-3xl font-bold opacity-90 text-[--text-header]">Reflective Journal</h1>
       </header>
 
-      <main className="z-20 flex-grow w-full max-w-md mx-auto overflow-y-auto space-y-5 pb-28 pr-1">
+      <main className="z-20 flex-grow w-full max-w-md mx-auto overflow-y-auto space-y-5 pr-1" style={{ paddingBottom: `calc(7rem + env(safe-area-inset-bottom, 0px))` }}>
         <div className="glassmorphism p-4 rounded-3xl shadow-lg space-y-4">
           <textarea
             value={entryText}
             onChange={(e) => setEntryText(e.target.value)}
             placeholder="Let your thoughts flow..."
-            className="w-full h-32 p-3 bg-transparent border border-white/20 rounded-2xl focus:ring-2 focus:ring-green-400 focus:border-green-400 outline-none text-[--text-on-glass] placeholder:text-[--text-on-glass]/60 resize-none transition-all duration-300 focus:shadow-[0_0_15px_rgba(74,222,128,0.5)]"
+            className="w-full h-32 p-3 bg-transparent border border-white/20 rounded-2xl focus:ring-2 focus:border-transparent outline-none text-[--text-on-glass] placeholder:text-[--text-on-glass]/60 resize-none transition-all duration-300"
+            style={{ ringColor: 'var(--accent-color)', boxShadow: '0 0 15px transparent' } as any}
+            onFocus={(e) => e.target.style.boxShadow = `0 0 15px var(--glow-color)`}
+            onBlur={(e) => e.target.style.boxShadow = '0 0 15px transparent'}
             disabled={isSaving}
           />
           {image && (
@@ -115,7 +118,8 @@ const JournalScreen: React.FC = () => {
                 value={imageCaption}
                 onChange={(e) => setImageCaption(e.target.value)}
                 placeholder="Add a caption..."
-                className="w-full p-2 bg-transparent border border-white/20 rounded-lg focus:ring-1 focus:ring-green-400 focus:border-green-400 outline-none text-[--text-on-glass] placeholder:text-[--text-on-glass]/60 text-sm"
+                className="w-full p-2 bg-transparent border border-white/20 rounded-lg focus:ring-1 focus:border-transparent outline-none text-[--text-on-glass] placeholder:text-[--text-on-glass]/60 text-sm"
+                style={{ ringColor: 'var(--accent-color)' } as any}
               />
             </div>
           )}
@@ -139,7 +143,7 @@ const JournalScreen: React.FC = () => {
             <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isSaving}
-                className="p-3 bg-green-500/30 text-white rounded-2xl hover:bg-green-400/30 transition-all duration-300 active:scale-95 disabled:bg-gray-500/50"
+                className="p-3 bg-white/10 text-white rounded-2xl hover:bg-white/20 transition-all duration-300 active:scale-95 disabled:bg-gray-500/50"
                 aria-label="Attach Image"
             >
                 <ImageIcon className="w-6 h-6" />
@@ -147,8 +151,8 @@ const JournalScreen: React.FC = () => {
             <button 
               onClick={handleSave} 
               disabled={isSaving || (entryText.trim() === '' && !image)} 
-              className={`w-full bg-green-500/80 text-white py-3 rounded-2xl font-semibold hover:bg-green-400/80 transition-all duration-300 disabled:bg-gray-500/50 active:scale-95 ${isSaving ? 'animate-pulsing-glow' : ''}`}
-              style={{ '--glow-color': 'rgba(74, 222, 128, 0.6)' } as React.CSSProperties}
+              className={`w-full text-white py-3 rounded-2xl font-semibold transition-all duration-300 disabled:bg-gray-500/50 active:scale-95 ${isSaving ? 'animate-pulsing-glow' : ''}`}
+              style={{ backgroundColor: 'var(--accent-color)' }}
             >
               {isSaving ? 'Saving...' : 'Save Entry'}
             </button>
@@ -156,7 +160,7 @@ const JournalScreen: React.FC = () => {
         </div>
         
         <div className="glassmorphism p-4 rounded-3xl shadow-lg space-y-3">
-            <h3 className="text-lg font-sans font-semibold text-center text-green-200">Daily Affirmations</h3>
+            <h3 className="text-lg font-sans font-semibold text-center" style={{ color: 'var(--accent-color)' }}>Daily Affirmations</h3>
             <div className="flex space-x-2">
                 <input
                     type="text"
@@ -164,12 +168,14 @@ const JournalScreen: React.FC = () => {
                     onChange={(e) => setAffirmationText(e.target.value)}
                     onKeyPress={e => e.key === 'Enter' && handleAddAffirmation()}
                     placeholder="e.g., I am worthy of peace."
-                    className="flex-grow p-2.5 bg-transparent border border-white/20 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-green-400 outline-none text-[--text-on-glass] placeholder:text-[--text-on-glass]/60"
+                    className="flex-grow p-2.5 bg-transparent border border-white/20 rounded-lg focus:ring-2 focus:border-transparent outline-none text-[--text-on-glass] placeholder:text-[--text-on-glass]/60"
+                    style={{ ringColor: 'var(--accent-color)' } as any}
                 />
                 <button
                     onClick={handleAddAffirmation}
                     disabled={!affirmationText.trim()}
-                    className="bg-green-500/80 text-white px-5 rounded-lg font-semibold hover:bg-green-400/80 transition-all duration-300 active:scale-95 disabled:bg-gray-500/50"
+                    className="text-white px-5 rounded-lg font-semibold transition-all duration-300 active:scale-95 disabled:bg-gray-500/50"
+                    style={{ backgroundColor: 'var(--accent-color)' }}
                 >
                     Add
                 </button>
@@ -191,19 +197,19 @@ const JournalScreen: React.FC = () => {
         </div>
 
         <div className="glassmorphism p-4 rounded-3xl shadow-lg space-y-3">
-          <h3 className="text-lg font-sans font-semibold text-center text-green-200">Past Reflections</h3>
+          <h3 className="text-lg font-sans font-semibold text-center" style={{ color: 'var(--accent-color)' }}>Past Reflections</h3>
            <button 
               onClick={handleSummarize} 
               disabled={isSummarizing}
-              className={`w-full bg-green-500/50 text-white py-2.5 mb-2 rounded-xl font-semibold hover:bg-green-400/50 transition-all duration-300 disabled:bg-gray-500/50 active:scale-95 ${isSummarizing ? 'animate-pulsing-glow' : ''}`}
-              style={{ '--glow-color': 'rgba(74, 222, 128, 0.4)' } as React.CSSProperties}
+              className={`w-full text-white py-2.5 mb-2 rounded-xl font-semibold transition-all duration-300 disabled:bg-gray-500/50 active:scale-95 ${isSummarizing ? 'animate-pulsing-glow' : ''}`}
+              style={{ backgroundColor: 'rgba(var(--accent-color-rgb), 0.7)' }}
             >
               {isSummarizing ? 'Reflecting...' : 'Summarize Last 7 Days'}
             </button>
           <div className="max-h-80 overflow-y-auto space-y-3 pr-1">
             {journals.length > 0 ? (
               journals.map(entry => (
-                <div key={entry.id} className="bg-green-50/10 p-4 rounded-xl animate-fade-in-up">
+                <div key={entry.id} className="bg-black/10 p-4 rounded-xl animate-fade-in-up">
                   {entry.imageUrl && (
                     <div className="mb-3">
                         <img src={entry.imageUrl} alt="Journal entry" className="w-full h-40 object-cover rounded-lg" />
@@ -220,8 +226,8 @@ const JournalScreen: React.FC = () => {
                   </div>
                   <p className="text-sm mb-3 whitespace-pre-wrap">{entry.text}</p>
                   {entry.reflection && (
-                    <div className="border-t border-green-300/20 pt-3 mt-3">
-                      <p className="text-xs font-bold text-green-300 mb-1">Lehsa's Reflection</p>
+                    <div className="border-t pt-3 mt-3" style={{ borderColor: 'rgba(var(--accent-color-rgb), 0.2)'}}>
+                      <p className="text-xs font-bold mb-1" style={{ color: 'var(--accent-color)' }}>Lehsa's Reflection</p>
                       <p className="text-sm italic opacity-80">{entry.reflection}</p>
                     </div>
                   )}
@@ -236,8 +242,8 @@ const JournalScreen: React.FC = () => {
       
       {showSummaryModal && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="glassmorphism border-green-400/30 rounded-3xl p-6 max-w-sm w-full shadow-2xl text-[--text-on-glass] animate-modal-in">
-                    <h2 className="text-xl font-sans font-bold text-center mb-4 text-green-300">Your Weekly Reflection</h2>
+                <div className="glassmorphism rounded-3xl p-6 max-w-sm w-full shadow-2xl text-[--text-on-glass] animate-modal-in" style={{ borderColor: 'rgba(var(--accent-color-rgb), 0.3)'}}>
+                    <h2 className="text-xl font-sans font-bold text-center mb-4" style={{ color: 'var(--accent-color)' }}>Your Weekly Reflection</h2>
                     
                     {isSummarizing || !summary ? (
                         <div className="flex flex-col items-center justify-center h-48">
@@ -258,7 +264,8 @@ const JournalScreen: React.FC = () => {
 
                     <button 
                         onClick={() => setShowSummaryModal(false)} 
-                        className="w-full mt-6 bg-green-500/80 text-white py-2.5 rounded-xl font-semibold hover:bg-green-400/80 transition-colors disabled:opacity-50"
+                        className="w-full mt-6 text-white py-2.5 rounded-xl font-semibold transition-colors disabled:opacity-50"
+                        style={{ backgroundColor: 'var(--accent-color)' }}
                         disabled={isSummarizing}
                     >
                         Close

@@ -338,9 +338,12 @@ const OnboardingScreen: React.FC = () => {
 
   return (
     <div className="h-full w-full onboarding-mode day-mode-bg text-[--text-primary]">
-        <div className="h-full flex flex-col items-center justify-center p-6 relative">
+        <div 
+            className="h-full flex flex-col items-center justify-center p-6 relative" 
+            style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: `calc(2.5rem + env(safe-area-inset-bottom, 0px))` }}
+        >
             {renderStep()}
-            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex space-x-2">
+            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex space-x-2" style={{ bottom: `calc(2.5rem + env(safe-area-inset-bottom, 0px))` }}>
                 {[...Array(6)].map((_, i) => (
                     <div key={i} className={`w-2 h-2 rounded-full transition-colors duration-300 ${i === step ? 'bg-[--text-primary]' : 'bg-[--text-secondary]/50'}`}></div>
                 ))}

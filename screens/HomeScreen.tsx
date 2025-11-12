@@ -52,13 +52,13 @@ const HomeScreen: React.FC = () => {
   ];
 
   return (
-    <div className="h-full w-full flex flex-col p-6 pt-12 relative">
+    <div className="h-full w-full flex flex-col p-6 relative" style={{ paddingTop: `calc(3rem + env(safe-area-inset-top, 0px))` }}>
       <header className="z-10 flex-shrink-0 mb-8">
         <h1 className="text-4xl font-sans font-bold leading-tight" style={{ color: 'var(--text-header)' }}>{greeting}, {userName}!</h1>
         <p className="text-lg" style={{ color: 'var(--text-secondary)' }}>{currentDate}</p>
       </header>
 
-      <main className="flex-grow flex flex-col justify-end z-10 overflow-y-auto pb-28">
+      <main className="flex-grow flex flex-col justify-end z-10 overflow-y-auto" style={{ paddingBottom: `calc(7rem + env(safe-area-inset-bottom, 0px))` }}>
         <div className="w-full max-w-md mx-auto space-y-6">
           <div data-no-swipe="true" className="glassmorphism rounded-3xl p-6 text-center" style={{ color: 'var(--text-on-glass)' }}>
               <h2 className="text-xl font-sans font-semibold">Lehsa Pulse</h2>

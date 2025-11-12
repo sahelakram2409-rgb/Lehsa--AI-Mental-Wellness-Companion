@@ -76,13 +76,13 @@ const JourneyScreen: React.FC = () => {
     }, []);
     
     return (
-        <div className="h-full w-full flex flex-col p-6 pt-10 relative overflow-x-hidden text-[--text-primary]">
+        <div className="h-full w-full flex flex-col p-6 relative overflow-x-hidden text-[--text-primary]" style={{ paddingTop: `calc(2.5rem + env(safe-area-inset-top, 0px))` }}>
             <header className="text-center z-10 mb-8 flex-shrink-0">
                 <h2 className="font-light text-sm tracking-widest uppercase opacity-80 text-[--text-secondary]">The Sunset Realm</h2>
                 <h1 className="font-sans text-3xl font-bold opacity-90 text-[--text-header]">Your Journey</h1>
             </header>
 
-            <main className="z-10 flex-grow flex flex-col items-center w-full max-w-md mx-auto overflow-y-auto pb-28">
+            <main className="z-10 flex-grow flex flex-col items-center w-full max-w-md mx-auto overflow-y-auto" style={{ paddingBottom: `calc(7rem + env(safe-area-inset-bottom, 0px))` }}>
                 <div className="glassmorphism rounded-3xl p-6 w-full flex items-center space-x-6 mb-6 text-[--text-on-glass]">
                     <div className="relative">
                         <CircularProgress percentage={overallProgress} color="var(--accent-color-hover)" size={100} strokeWidth={8} />

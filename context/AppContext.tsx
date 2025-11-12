@@ -8,6 +8,8 @@ function useLocalStorage<T>(key: string, initialValue: T | (() => T)): [T, React
         try {
             const item = window.localStorage.getItem(key);
             if (item) {
+                // Allow null to be stored and retrieved correctly
+                if (item === 'null') return null as T;
                 return JSON.parse(item, (k, v) => {
                     if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/.test(v)) {
                         return new Date(v);
@@ -24,6 +26,7 @@ function useLocalStorage<T>(key: string, initialValue: T | (() => T)): [T, React
 
     useEffect(() => {
         try {
+            // Allow null to be stored as the string 'null'
             window.localStorage.setItem(key, JSON.stringify(storedValue));
         } catch (error) {
             console.error(`Error saving ${key} to localStorage:`, error);
@@ -68,6 +71,10 @@ interface AppContextType {
   setFeeling: (feeling: number) => void;
   feelingTimestamp: Date | null;
   logUserAction: (eventName: string, details?: Record<string, any>) => void;
+  globalTheme: string | null;
+  setGlobalTheme: (theme: string | null) => void;
+  restartTour: () => void;
+  resetAllData: () => void;
 }
 
 interface MusicContextType {
@@ -109,6 +116,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [meditationCount, setMeditationCount] = useLocalStorage<number>('meditationCount', 0);
   const [affirmations, setAffirmations] = useLocalStorage<Affirmation[]>('affirmations', []);
   const [analyticsEvents, setAnalyticsEvents] = useLocalStorage<AnalyticsEvent[]>('analyticsEvents', []);
+  const [globalTheme, setGlobalTheme] = useLocalStorage<string | null>('globalTheme', null);
   
   const [feeling, setFeelingState] = useState(50);
   const [feelingTimestamp, setFeelingTimestamp] = useState<Date | null>(null);
@@ -287,18 +295,33 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     logUserAction('affirmation_deleted');
   }, [setAffirmations, logUserAction]);
 
+  const restartTour = useCallback(() => {
+    localStorage.removeItem('tourComplete');
+    logUserAction('tour_restarted');
+    window.location.reload();
+  }, [logUserAction]);
+
+  const resetAllData = useCallback(() => {
+    logUserAction('app_data_reset');
+    const appKeys = ['userName', 'userCountry', 'userAge', 'userGender', 'onboardingComplete', 'journals', 'goals', 'chatMessages', 'meditationCount', 'affirmations', 'analyticsEvents', 'globalTheme', 'tourComplete'];
+    appKeys.forEach(key => localStorage.removeItem(key));
+    window.location.reload();
+  }, [logUserAction]);
+
   const value = useMemo(() => ({
     userName, setUserName, userCountry, setUserCountry, userAge, setUserAge, userGender, setUserGender, 
     isOnboardingComplete, completeOnboarding, journals, addJournal, goals, addGoal,
     updateGoalStatus, toggleDailyGoalCompletion, deleteGoal, togglePinGoal, setGoalReminder, markReminderAsShown,
     chatMessages, addChatMessage, activeScreen, setActiveScreen, meditationCount, incrementMeditationCount,
-    affirmations, addAffirmation, deleteAffirmation, checkStreaks, feeling, setFeeling, feelingTimestamp, logUserAction
+    affirmations, addAffirmation, deleteAffirmation, checkStreaks, feeling, setFeeling, feelingTimestamp, logUserAction,
+    globalTheme, setGlobalTheme, restartTour, resetAllData
   }), [
     userName, setUserName, userCountry, setUserCountry, userAge, setUserAge, userGender, setUserGender, 
     isOnboardingComplete, completeOnboarding, journals, addJournal, goals, addGoal,
     updateGoalStatus, toggleDailyGoalCompletion, deleteGoal, togglePinGoal, setGoalReminder, markReminderAsShown,
     chatMessages, addChatMessage, activeScreen, setActiveScreen, meditationCount, incrementMeditationCount,
-    affirmations, addAffirmation, deleteAffirmation, checkStreaks, feeling, setFeeling, feelingTimestamp, logUserAction
+    affirmations, addAffirmation, deleteAffirmation, checkStreaks, feeling, setFeeling, feelingTimestamp, logUserAction,
+    globalTheme, setGlobalTheme, restartTour, resetAllData
   ]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
@@ -403,6 +426,7 @@ export const MusicProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         if (!currentAlbum || !currentTrack) return;
         const currentIndex = currentAlbum.tracks.findIndex(t => t.title === currentTrack.title);
         const prevIndex = (currentIndex - 1 + currentAlbum.tracks.length) % currentAlbum.tracks.length;
+        // Fix: Changed nextIndex to prevIndex to correctly play the previous track.
         await playTrack(currentAlbum, currentAlbum.tracks[prevIndex]);
     }, [currentAlbum, currentTrack, playTrack]);
     
