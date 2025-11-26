@@ -121,6 +121,46 @@ const ProfileScreen: React.FC = () => {
                     </div>
                 </div>
 
+                {/* About Lehsa */}
+                <div className="glassmorphism p-5 rounded-3xl shadow-lg mb-4">
+                    <div className="flex flex-col items-center mb-5">
+                         <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[--accent-color] to-white/50 shadow-inner flex items-center justify-center mb-3 animate-soft-glow">
+                             <span className="font-serif italic text-2xl text-white font-bold">L</span>
+                         </div>
+                        <h3 className="text-xl font-sans font-bold text-[--text-header]">About Lehsa</h3>
+                        <p className="text-xs font-medium opacity-60 tracking-widest uppercase mt-1">AI Mental Wellness Companion</p>
+                    </div>
+
+                    <div className="space-y-5 text-sm leading-relaxed opacity-90 text-[--text-primary] text-justify">
+                        <p>
+                            Lehsa is more than just an app; it is a digital sanctuary designed to help you navigate the complexities of your inner world. Built on the principles of <strong>Zen Minimalism</strong> and a <strong>Privacy-First</strong> architecture, Lehsa acts as a compassionate ecosystem for self-reflection and growth.
+                        </p>
+
+                        <div>
+                            <h4 className="font-semibold text-[--accent-color] mb-2 text-center sm:text-left">The Realms of Wellness</h4>
+                            <p className="mb-2">Lehsa categorizes your wellness journey into distinct "Realms" to create immersive, focused experiences:</p>
+                            <ul className="space-y-2 mt-2">
+                                <li className="flex items-start"><span className="mr-2 text-[--accent-color]">🌿</span> <span><strong>The Forest:</strong> A space for deep journaling.</span></li>
+                                <li className="flex items-start"><span className="mr-2 text-[--accent-color]">🌙</span> <span><strong>The Lunar Realm:</strong> An empathetic AI companion.</span></li>
+                                <li className="flex items-start"><span className="mr-2 text-[--accent-color]">🌊</span> <span><strong>The Ocean:</strong> Guided meditations for calm.</span></li>
+                                <li className="flex items-start"><span className="mr-2 text-[--accent-color]">🪐</span> <span><strong>The Cosmic Realm:</strong> Growth and goal setting.</span></li>
+                            </ul>
+                        </div>
+
+                         <div>
+                            <h4 className="font-semibold text-[--accent-color] mb-2 text-center sm:text-left">Your Privacy, Our Priority</h4>
+                            <p>
+                                We believe that true vulnerability requires safety. That is why Lehsa operates entirely locally on your device. Your journal entries, personal goals, and chat histories are never sent to a central server for storage. Your data stays with you.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div className="mt-8 pt-4 border-t border-white/10 text-center">
+                        <p className="text-xs opacity-50">Version 1.0.0 • Gemini Powered</p>
+                        <p className="text-xs opacity-50 mt-1">Made with ❤️ for Mental Wellness</p>
+                    </div>
+                </div>
+
             </main>
         </div>
     );
