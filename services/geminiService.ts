@@ -20,7 +20,7 @@ export const getChatResponse = async (history: ChatMessage[], newMessage: string
         const profileContext = profileContextParts.length > 0 ? `The user is ${profileContextParts.join(', ')}.` : 'The user is from an unspecified location.';
 
         const chat = ai.chats.create({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-3-flash-preview',
             history: chatHistory,
             config: {
                 systemInstruction: `You are Lehsa, a compassionate AI wellness companion. ${profileContext} Be supportive, empathetic, and a good listener. Use the provided journal context to be aware of the user's state. Be subtle and never mention the journal directly.
@@ -51,7 +51,7 @@ Journal Entry:
 Your Reflection:`;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-3-flash-preview',
             contents: prompt,
         });
         return response.text.trim();
@@ -72,7 +72,7 @@ Journal Entry:
 Suggested Goal:`;
         
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-3-flash-preview',
             contents: prompt,
         });
 
@@ -101,7 +101,7 @@ ${formattedEntries}
 Your Weekly Summary:`;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-pro',
+            model: 'gemini-3-pro-preview',
             contents: prompt,
         });
         return response.text.trim();
