@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { Screen, screenOrder } from '../types';
 import { HomeIcon, JournalIcon, JourneyIcon, GrowthIcon, ChatIcon, MusicIcon, MeditationIcon, ProfileIcon } from './Icons';
@@ -20,133 +20,75 @@ const navItems = [
 
 const BottomNav: React.FC<BottomNavProps> = ({ navItemRefs }) => {
   const { activeScreen, setActiveScreen } = useAppContext();
-  const [navWidth, setNavWidth] = useState(0);
-  const navRef = useRef<HTMLElement>(null);
+  const navScrollRef = useRef<HTMLDivElement>(null);
 
-  const [translateX, setTranslateX] = useState(0);
-  const [isManualDrag, setIsManualDrag] = useState(false);
-  const isDragging = useRef(false);
-  const dragStartX = useRef(0);
-  const dragStartTranslateX = useRef(0);
-
-  useEffect(() => {
-    const updateWidth = () => {
-      if (navRef.current) {
-        setNavWidth(navRef.current.offsetWidth);
-      }
-    };
-    updateWidth();
-    window.addEventListener('resize', updateWidth);
-    return () => window.removeEventListener('resize', updateWidth);
-  }, []);
-
-  useEffect(() => {
-    if (isDragging.current) return; // Don't auto-slide while user is dragging
-    
-    const activeIndex = screenOrder.indexOf(activeScreen);
-    const itemWidth = navWidth / 5; // We want to show 5 items
-    
-    if (itemWidth > 0) {
-        const totalWidth = itemWidth * navItems.length;
-        if (totalWidth <= navWidth) {
-            // Center the whole block if it's smaller than the container
-            setTranslateX((navWidth - totalWidth) / 2);
-            return;
-        }
-
-        const offset = -activeIndex * itemWidth + (navWidth / 2) - (itemWidth / 2);
-        
-        // Clamp the offset to prevent overscrolling on screen change
-        const minTranslateX = -(totalWidth - navWidth);
-        const maxTranslateX = 0;
-        const clampedOffset = Math.max(minTranslateX, Math.min(maxTranslateX, offset));
-        
-        setTranslateX(clampedOffset);
-    }
-  }, [activeScreen, navWidth]);
-
-  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-      isDragging.current = true;
-      setIsManualDrag(true);
-      dragStartX.current = e.touches[0].clientX;
-      dragStartTranslateX.current = translateX;
-  };
-
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-      if (!isDragging.current) return;
-      
-      const deltaX = e.touches[0].clientX - dragStartX.current;
-      const newTranslateX = dragStartTranslateX.current + deltaX;
-
-      const itemWidth = navWidth / 5;
-      const totalWidth = itemWidth * navItems.length;
-      if (totalWidth <= navWidth) return;
-
-      const minTranslateX = -(totalWidth - navWidth);
-      const maxTranslateX = 0;
-
-      const clampedTranslateX = Math.max(minTranslateX, Math.min(maxTranslateX, newTranslateX));
-      setTranslateX(clampedTranslateX);
-  };
-
-  const handleTouchEnd = () => {
-      isDragging.current = false;
-      setIsManualDrag(false);
-  };
-  
   const activeIndex = screenOrder.indexOf(activeScreen);
-  const itemWidth = navWidth / 5;
+
+  useEffect(() => {
+    // Scroll active item into view smoothly on screen change
+    if (navScrollRef.current && activeIndex >= 0) {
+        const activeElement = navScrollRef.current.children[activeIndex] as HTMLElement;
+        if (activeElement) {
+            const containerCenter = navScrollRef.current.offsetWidth / 2;
+            const elementCenter = activeElement.offsetLeft + activeElement.offsetWidth / 2;
+            const scrollPos = elementCenter - containerCenter;
+
+            navScrollRef.current.scrollTo({
+                left: scrollPos,
+                behavior: 'smooth'
+            });
+        }
+    }
+  }, [activeIndex]);
 
   return (
-    <nav 
-      ref={navRef} 
-      className="fixed bottom-0 left-0 w-full z-50 overflow-hidden"
-      style={{ 
-        height: 'calc(6rem + env(safe-area-inset-bottom, 0px))', 
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)' 
-      }}
-    >
-      <div className="absolute bottom-0 left-0 w-full h-full glassmorphism" />
-      <div
-        className={`flex h-full ${!isManualDrag ? 'transition-transform duration-500' : ''}`}
-        style={{ transform: `translateX(${translateX}px)`, width: `${itemWidth * navItems.length}px`, willChange: 'transform' }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        {navItems.map((item, index) => {
-          const isActive = activeIndex === index;
-          const distance = Math.abs(activeIndex - index);
-          
-          const scale = isActive ? 1 : Math.max(0.7, 1 - distance * 0.15);
-          const opacity = isActive ? 1 : Math.max(0.5, 1 - distance * 0.25);
-
-          return (
-            <button
-              ref={navItemRefs[index]}
-              key={item.label}
-              onClick={() => setActiveScreen(item.screen)}
-              className="flex flex-col items-center justify-center z-10 relative transition-all duration-500 ease-out group"
-              style={{ width: `${itemWidth}px`, transform: `scale(${scale})`, opacity: opacity }}
-              aria-label={item.label}
-            >
-              <div className={`relative flex items-center justify-center w-16 h-12 transition-transform duration-300 ${isActive ? '-translate-y-2' : ''}`}>
-                 {isActive && (
-                    <div 
-                      className="absolute inset-0 rounded-full transition-all duration-500 ease-out"
-                      style={{ background: 'var(--accent-color)', filter: 'blur(16px)', opacity: 0.6, transform: 'scale(1.4)' }}
-                    ></div>
-                )}
-                <item.icon
-                  className={`w-7 h-7 mb-1 transition-all duration-300 group-hover:opacity-80 ${isActive ? `scale-110` : ''}`}
-                  style={{ color: isActive ? 'var(--accent-color)' : 'var(--icon-inactive-color)'}}
-                  isActive={isActive}
-                />
-              </div>
-              <span className={`text-xs transition-all duration-300 group-hover:opacity-80 ${isActive ? `font-bold` : ''}`} style={{ color: isActive ? 'var(--text-primary)' : 'var(--icon-inactive-color)'}}>{item.label}</span>
-            </button>
-          );
-        })}
+    <nav className="fixed bottom-0 left-0 w-full z-50 pointer-events-none" style={{ paddingBottom: 'env(safe-area-inset-bottom, 20px)' }}>
+      <div className="mx-auto max-w-lg w-full px-4 mb-2 pointer-events-auto">
+        <div 
+            className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl shadow-black/10 flex items-center justify-start overflow-x-auto no-scrollbar py-2 px-2"
+            ref={navScrollRef}
+            style={{ 
+                WebkitOverflowScrolling: 'touch',
+                scrollSnapType: 'x mandatory'
+            }}
+        >
+            {navItems.map((item, index) => {
+            const isActive = activeScreen === item.screen;
+            
+            return (
+                <button
+                    ref={navItemRefs[index]}
+                    key={item.label}
+                    onClick={() => setActiveScreen(item.screen)}
+                    className={`flex-shrink-0 relative group flex flex-col items-center justify-center min-w-[4.5rem] py-2 transition-all duration-300 ease-out scroll-snap-align-center rounded-xl mx-1`}
+                    style={{ 
+                        opacity: isActive ? 1 : 0.6,
+                    }}
+                    aria-label={item.label}
+                >
+                    {isActive && (
+                         <div className="absolute inset-0 bg-white/10 rounded-xl shadow-inner border border-white/10 transition-all duration-300" />
+                    )}
+                    
+                    <div className={`relative z-10 p-1.5 rounded-full transition-transform duration-300 ${isActive ? 'scale-110 -translate-y-1' : ''}`}>
+                         {isActive && <div className="absolute inset-0 bg-[var(--accent-color)] opacity-20 blur-lg rounded-full" />}
+                         <item.icon
+                            className={`w-6 h-6 transition-colors duration-300`}
+                            style={{ color: isActive ? 'var(--accent-color)' : 'var(--icon-inactive-color)' }}
+                            isActive={isActive}
+                         />
+                    </div>
+                    {isActive ? (
+                        <span className="text-[10px] font-bold mt-1 text-[var(--text-primary)] animate-fade-in-up">
+                            {item.label}
+                        </span>
+                    ) : (
+                         <div className="w-1 h-1 rounded-full bg-[var(--icon-inactive-color)] opacity-40 mt-2" />
+                    )}
+                </button>
+            );
+            })}
+        </div>
       </div>
     </nav>
   );

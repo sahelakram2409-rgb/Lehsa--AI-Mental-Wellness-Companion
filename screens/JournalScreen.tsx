@@ -2,9 +2,10 @@ import React, { useState, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { summarizeJournalEntries } from '../services/geminiService';
 import { TrashIcon, ImageIcon, XCircleIcon } from '../components/Icons';
+import { Screen } from '../types';
 
 const JournalScreen: React.FC = () => {
-  const { journals, addJournal, affirmations, addAffirmation, deleteAffirmation } = useAppContext();
+  const { journals, addJournal, affirmations, addAffirmation, deleteAffirmation, getRealmMoodText } = useAppContext();
   const [entryText, setEntryText] = useState('');
   const [image, setImage] = useState<string | null>(null);
   const [imageCaption, setImageCaption] = useState('');
@@ -85,9 +86,10 @@ const JournalScreen: React.FC = () => {
         ))}
       </div>
 
-      <header className="text-center z-20 mb-6 flex-shrink-0">
+      <header className="text-center z-20 mb-6 flex-shrink-0 animate-fade-in-up">
         <h2 className="font-light text-sm tracking-widest opacity-80 uppercase text-[--text-secondary]">The Forest Realm</h2>
         <h1 className="font-sans text-3xl font-bold opacity-90 text-[--text-header]">Reflective Journal</h1>
+        <p className="text-xs font-semibold text-[--accent-color] mt-1">{getRealmMoodText(Screen.Journal)}</p>
       </header>
 
       <main className="z-20 flex-grow w-full max-w-md mx-auto overflow-y-auto space-y-5 pr-1" style={{ paddingBottom: `calc(7rem + env(safe-area-inset-bottom, 0px))` }}>

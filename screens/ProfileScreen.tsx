@@ -90,7 +90,6 @@ const ProfileScreen: React.FC = () => {
                                 key={theme.id}
                                 onClick={() => setGlobalTheme(theme.id)}
                                 className={`aspect-square rounded-lg transition-all duration-200 ${theme.bg} ${globalTheme === theme.id ? 'ring-2 ring-offset-2 ring-offset-transparent' : 'opacity-70 hover:opacity-100'}`}
-                                // Fix: Replaced non-standard `ringColor` with the correct CSS variable for Tailwind's ring color.
                                 style={{ '--tw-ring-color': 'var(--accent-color)' } as React.CSSProperties}
                                 aria-label={`Select ${theme.name} theme`}
                             >
@@ -101,7 +100,6 @@ const ProfileScreen: React.FC = () => {
                     <button 
                         onClick={() => setGlobalTheme(null)}
                         className={`w-full mt-4 text-left p-3 glassmorphism rounded-lg hover:bg-white/10 transition-colors text-sm font-semibold ${globalTheme === null ? 'ring-2' : ''}`}
-                        // Fix: Replaced non-standard `ringColor` with the correct CSS variable for Tailwind's ring color.
                         style={{ '--tw-ring-color': 'var(--accent-color)' } as React.CSSProperties}
                     >
                        Use Default Realm Themes

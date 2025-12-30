@@ -1,4 +1,4 @@
-// Fix: Defined the Screen enum in types.ts to fix a circular dependency and make it available to the rest of the application.
+
 export enum Screen {
   Home = 'Home',
   Journal = 'Journal',
@@ -20,6 +20,14 @@ export const screenOrder: Screen[] = [
   Screen.Chat,
   Screen.Profile,
 ];
+
+export interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  unlockedAt?: Date;
+}
 
 export interface JournalEntry {
   id: string;

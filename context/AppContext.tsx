@@ -1,14 +1,14 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useRef, useCallback } from 'react';
 import { Screen, JournalEntry, Goal, ChatMessage, Album, Track, Affirmation, AnalyticsEvent } from '../types';
 import { analyzeJournalEntry } from '../services/geminiService';
+import { ConfettiType } from '../components/Confetti';
 
-// Custom hook for abstracting localStorage logic
 function useLocalStorage<T>(key: string, initialValue: T | (() => T)): [T, React.Dispatch<React.SetStateAction<T>>] {
     const [storedValue, setStoredValue] = useState<T>(() => {
         try {
             const item = window.localStorage.getItem(key);
             if (item) {
-                // Allow null to be stored and retrieved correctly
                 if (item === 'null') return null as T;
                 return JSON.parse(item, (k, v) => {
                     if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/.test(v)) {
@@ -26,7 +26,6 @@ function useLocalStorage<T>(key: string, initialValue: T | (() => T)): [T, React
 
     useEffect(() => {
         try {
-            // Allow null to be stored as the string 'null'
             window.localStorage.setItem(key, JSON.stringify(storedValue));
         } catch (error) {
             console.error(`Error saving ${key} to localStorage:`, error);
@@ -75,6 +74,16 @@ interface AppContextType {
   setGlobalTheme: (theme: string | null) => void;
   restartTour: () => void;
   resetAllData: () => void;
+  getRealmMoodText: (realm: Screen) => string;
+  // Gamification
+  xp: number;
+  level: number;
+  addXP: (amount: number, reason: string, celebration?: ConfettiType) => void;
+  recentXPEvent: { amount: number, reason: string } | null;
+  xpToNextLevel: number;
+  confettiTrigger: { active: boolean; type: ConfettiType };
+  showLevelUp: number | null;
+  closeLevelUp: () => void;
 }
 
 interface MusicContextType {
@@ -118,9 +127,45 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [analyticsEvents, setAnalyticsEvents] = useLocalStorage<AnalyticsEvent[]>('analyticsEvents', []);
   const [globalTheme, setGlobalTheme] = useLocalStorage<string | null>('globalTheme', null);
   
+  // Gamification state
+  const [xp, setXP] = useLocalStorage<number>('userXP', 0);
+  const [recentXPEvent, setRecentXPEvent] = useState<{ amount: number, reason: string } | null>(null);
+  const [confettiTrigger, setConfettiTrigger] = useState<{ active: boolean; type: ConfettiType }>({ active: false, type: 'standard' });
+  const [showLevelUp, setShowLevelUp] = useState<number | null>(null);
+
   const [feeling, setFeelingState] = useState(50);
   const [feelingTimestamp, setFeelingTimestamp] = useState<Date | null>(null);
   const [activeScreen, _setActiveScreen] = useState<Screen>(Screen.Home);
+
+  const level = useMemo(() => Math.floor(xp / 500) + 1, [xp]);
+  const xpToNextLevel = useMemo(() => 500 - (xp % 500), [xp]);
+
+  const triggerConfetti = useCallback((type: ConfettiType = 'standard') => {
+      setConfettiTrigger({ active: false, type });
+      setTimeout(() => setConfettiTrigger({ active: true, type }), 10);
+      setTimeout(() => setConfettiTrigger(prev => ({ ...prev, active: false })), 4000);
+  }, []);
+
+  const addXP = useCallback((amount: number, reason: string, celebration: ConfettiType = 'none') => {
+      const oldLevel = Math.floor(xp / 500) + 1;
+      const newXP = xp + amount;
+      const newLevel = Math.floor(newXP / 500) + 1;
+      
+      setXP(newXP);
+      setRecentXPEvent({ amount, reason });
+      
+      if (newLevel > oldLevel) {
+          setShowLevelUp(newLevel);
+          triggerConfetti('stars');
+      } else if (celebration !== 'none') {
+          triggerConfetti(celebration);
+      }
+      
+      // Clearing state fast for snappy UI
+      setTimeout(() => setRecentXPEvent(null), 2500);
+  }, [xp, setXP, triggerConfetti]);
+
+  const closeLevelUp = useCallback(() => setShowLevelUp(null), []);
 
   const logUserAction = useCallback((eventName: string, details: Record<string, any> = {}) => {
       const newEvent: AnalyticsEvent = {
@@ -130,7 +175,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           details,
       };
       setAnalyticsEvents(prev => [...prev, newEvent]);
-      console.log('Analytics Event:', newEvent);
   }, [setAnalyticsEvents]);
   
   const setActiveScreen = useCallback((screen: Screen) => {
@@ -140,12 +184,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const completeOnboarding = useCallback(() => {
     setIsOnboardingComplete(true)
+    addXP(100, "Starting your journey", 'flowers');
     logUserAction('onboarding_completed', {
         age: userAge,
         gender: userGender,
         country: userCountry
     });
-  }, [setIsOnboardingComplete, logUserAction, userAge, userGender, userCountry]);
+  }, [setIsOnboardingComplete, logUserAction, userAge, userGender, userCountry, addXP]);
 
   const addJournal = useCallback(async (entryText: string, mood?: string, imageUrl?: string | null, imageCaption?: string) => {
     const reflection = await analyzeJournalEntry(entryText);
@@ -159,23 +204,26 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         imageCaption: imageCaption || undefined,
     };
     setJournals(prev => [newEntry, ...prev]);
+    addXP(50, "Daily Reflection", 'leaves');
     logUserAction('journal_added', { mood: mood || 'not_set', length: entryText.length, has_image: !!imageUrl, has_caption: !!imageCaption });
-  }, [setJournals, logUserAction]);
+  }, [setJournals, logUserAction, addXP]);
 
   const addGoal = useCallback((goal: Omit<Goal, 'status'>) => {
     setGoals(prev => [{ ...goal, status: 'Active', creationDate: new Date(), currentStreak: 0, longestStreak: 0 }, ...prev]);
+    addXP(20, "Planting a Goal Seed", 'leaves');
     logUserAction('goal_added', { type: goal.type });
-  }, [setGoals, logUserAction]);
+  }, [setGoals, logUserAction, addXP]);
 
   const updateGoalStatus = useCallback((goalName: string, status: 'Active' | 'Completed') => {
       setGoals(prev => {
           const goal = prev.find(g => g.goalName === goalName);
           if (goal && status === 'Completed' && goal.type === 'single') {
+              addXP(100, "Goal Bloom", 'stars');
               logUserAction('goal_completed_single', { goalName });
           }
           return prev.map(g => g.goalName === goalName ? { ...g, status } : g);
       });
-  }, [setGoals, logUserAction]);
+  }, [setGoals, logUserAction, addXP]);
 
   const toggleDailyGoalCompletion = useCallback((goalName: string) => {
     setGoals(prev => prev.map(g => {
@@ -188,14 +236,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         yesterday.setDate(today.getDate() - 1);
         const isCompletedToday = isToday(g.lastCompleted);
 
-        // Marking as complete
         if (!isCompletedToday) {
+            addXP(30, "Habit Nurtured", 'stars');
             logUserAction('goal_completed_daily', { goalName });
             const lastCompletedDate = g.lastCompleted ? new Date(g.lastCompleted) : null;
-            
             const wasCompletedYesterday = lastCompletedDate?.toDateString() === yesterday.toDateString();
             const newCurrentStreak = wasCompletedYesterday ? (g.currentStreak || 0) + 1 : 1;
             const newLongestStreak = Math.max(g.longestStreak || 0, newCurrentStreak);
+
+            if (newCurrentStreak % 7 === 0) {
+                addXP(70, "7-Day Resilience", 'flowers');
+            }
 
             return {
                 ...g,
@@ -203,10 +254,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 currentStreak: newCurrentStreak,
                 longestStreak: newLongestStreak
             };
-        } 
-        // Un-marking as complete (immediate undo)
-        else {
-            logUserAction('goal_uncompleted_daily', { goalName });
+        } else {
             return {
                 ...g,
                 lastCompleted: undefined,
@@ -214,7 +262,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             };
         }
     }));
-  }, [setGoals, logUserAction]);
+  }, [setGoals, logUserAction, addXP]);
 
   const checkStreaks = useCallback(() => {
     setGoals(prevGoals => {
@@ -226,13 +274,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const updatedGoals = prevGoals.map(goal => {
             if (goal.type === 'daily' && goal.status === 'Active' && (goal.currentStreak || 0) > 0) {
                 const lastCompletedDate = goal.lastCompleted ? new Date(goal.lastCompleted) : null;
-                
                 const isCurrent = lastCompletedDate?.toDateString() === today.toDateString() || lastCompletedDate?.toDateString() === yesterday.toDateString();
-
                 if (!isCurrent) {
                     if (goal.currentStreak !== 0) {
                         hasChanged = true;
-                        logUserAction('streak_broken', { goalName: goal.goalName, streak: goal.currentStreak });
                         return { ...goal, currentStreak: 0 };
                     }
                 }
@@ -241,12 +286,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         });
         return hasChanged ? updatedGoals : prevGoals;
     });
-  }, [setGoals, logUserAction]);
+  }, [setGoals]);
 
   const deleteGoal = useCallback((goalName: string) => {
     setGoals(prev => prev.filter(g => g.goalName !== goalName));
-    logUserAction('goal_deleted', { goalName });
-  }, [setGoals, logUserAction]);
+  }, [setGoals]);
 
   const togglePinGoal = useCallback((goalName: string) => {
       setGoals(prev => prev.map(g => g.goalName === goalName ? { ...g, isPinned: !g.isPinned } : g));
@@ -268,45 +312,88 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const addChatMessage = useCallback((message: ChatMessage) => {
     if (message.sender === 'user') {
-        logUserAction('chat_message_sent', { length: message.text.length });
+        // Less annoying XP: only give XP for significant sharing (every 5 messages)
+        if (chatMessages.filter(m => m.sender === 'user').length % 5 === 0) {
+            addXP(20, "Meaningful Soul Sharing", 'stars');
+        }
     }
     setChatMessages(prev => [...prev, message]);
-  }, [setChatMessages, logUserAction]);
+  }, [setChatMessages, addXP, chatMessages]);
 
   const incrementMeditationCount = useCallback((meditationTitle: string) => {
       setMeditationCount(prev => prev + 1);
+      addXP(60, "Mental Stillness", 'flowers');
       logUserAction('meditation_completed', { title: meditationTitle });
-  }, [setMeditationCount, logUserAction]);
+  }, [setMeditationCount, logUserAction, addXP]);
   
   const setFeeling = useCallback((newFeeling: number) => {
     setFeelingState(newFeeling);
     setFeelingTimestamp(new Date());
+    const celebration: ConfettiType = newFeeling < 40 ? 'leaves' : 'flowers';
+    addXP(10, "Mood Connection", celebration);
     logUserAction('feeling_updated', { value: newFeeling });
-  }, [logUserAction]);
+  }, [logUserAction, addXP]);
 
   const addAffirmation = useCallback((text: string) => {
     const newAffirmation: Affirmation = { id: `affirmation-${Date.now()}`, text, timestamp: new Date() };
     setAffirmations(prev => [newAffirmation, ...prev]);
-    logUserAction('affirmation_added');
-  }, [setAffirmations, logUserAction]);
+    addXP(10, "Internal Sunshine", 'standard');
+  }, [setAffirmations, addXP]);
 
   const deleteAffirmation = useCallback((id: string) => {
     setAffirmations(prev => prev.filter(a => a.id !== id));
-    logUserAction('affirmation_deleted');
-  }, [setAffirmations, logUserAction]);
+  }, [setAffirmations]);
 
   const restartTour = useCallback(() => {
     localStorage.removeItem('tourComplete');
-    logUserAction('tour_restarted');
     window.location.reload();
-  }, [logUserAction]);
+  }, []);
 
   const resetAllData = useCallback(() => {
-    logUserAction('app_data_reset');
-    const appKeys = ['userName', 'userCountry', 'userAge', 'userGender', 'onboardingComplete', 'journals', 'goals', 'chatMessages', 'meditationCount', 'affirmations', 'analyticsEvents', 'globalTheme', 'tourComplete'];
+    const appKeys = ['userName', 'userCountry', 'userAge', 'userGender', 'onboardingComplete', 'journals', 'goals', 'chatMessages', 'meditationCount', 'affirmations', 'analyticsEvents', 'globalTheme', 'tourComplete', 'userXP'];
     appKeys.forEach(key => localStorage.removeItem(key));
     window.location.reload();
-  }, [logUserAction]);
+  }, []);
+
+  const getRealmMoodText = useCallback((realm: Screen) => {
+    if (feeling < 35) { // Low Mood
+        switch(realm) {
+            case Screen.Chat: return "I'm here to listen";
+            case Screen.Journal: return "Let it all out";
+            case Screen.Music: return "Gentle comfort";
+            case Screen.Meditation: return "Breathe & release";
+            case Screen.Growth: return "One small step";
+            case Screen.Journey: return "Your valid path";
+            case Screen.Home: return "Home";
+            case Screen.Profile: return "Your Profile";
+            default: return "";
+        }
+    } else if (feeling > 75) { // High Mood
+        switch(realm) {
+            case Screen.Chat: return "Share the joy";
+            case Screen.Journal: return "Capture this feeling";
+            case Screen.Music: return "Vibrant tunes";
+            case Screen.Meditation: return "Gratitude practice";
+            case Screen.Growth: return "Keep rising";
+            case Screen.Journey: return "Celebrating you";
+            case Screen.Home: return "Home";
+            case Screen.Profile: return "Your Profile";
+            default: return "";
+        }
+    } else { // Neutral Mood
+        switch(realm) {
+            case Screen.Chat: return "Chat with Lehsa";
+            case Screen.Journal: return "Reflect on today";
+            case Screen.Music: return "Relaxing melodies";
+            case Screen.Meditation: return "Center yourself";
+            case Screen.Growth: return "Grow & Evolve";
+            case Screen.Journey: return "Your Journey";
+            case Screen.Home: return "Home";
+            case Screen.Profile: return "Your Profile";
+            default: return "";
+        }
+    }
+  }, [feeling]);
 
   const value = useMemo(() => ({
     userName, setUserName, userCountry, setUserCountry, userAge, setUserAge, userGender, setUserGender, 
@@ -314,14 +401,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     updateGoalStatus, toggleDailyGoalCompletion, deleteGoal, togglePinGoal, setGoalReminder, markReminderAsShown,
     chatMessages, addChatMessage, activeScreen, setActiveScreen, meditationCount, incrementMeditationCount,
     affirmations, addAffirmation, deleteAffirmation, checkStreaks, feeling, setFeeling, feelingTimestamp, logUserAction,
-    globalTheme, setGlobalTheme, restartTour, resetAllData
+    globalTheme, setGlobalTheme, restartTour, resetAllData, getRealmMoodText,
+    xp, level, addXP, recentXPEvent, xpToNextLevel, confettiTrigger, showLevelUp, closeLevelUp
   }), [
     userName, setUserName, userCountry, setUserCountry, userAge, setUserAge, userGender, setUserGender, 
     isOnboardingComplete, completeOnboarding, journals, addJournal, goals, addGoal,
     updateGoalStatus, toggleDailyGoalCompletion, deleteGoal, togglePinGoal, setGoalReminder, markReminderAsShown,
     chatMessages, addChatMessage, activeScreen, setActiveScreen, meditationCount, incrementMeditationCount,
     affirmations, addAffirmation, deleteAffirmation, checkStreaks, feeling, setFeeling, feelingTimestamp, logUserAction,
-    globalTheme, setGlobalTheme, restartTour, resetAllData
+    globalTheme, setGlobalTheme, restartTour, resetAllData, getRealmMoodText,
+    xp, level, addXP, recentXPEvent, xpToNextLevel, confettiTrigger, showLevelUp, closeLevelUp
   ]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
@@ -359,16 +448,10 @@ export const MusicProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         const video = videoRef.current;
         if (!audio || !video) return;
 
-        if (!audioContextRef.current) {
-            setupAudioContext();
-        }
+        if (!audioContextRef.current) setupAudioContext();
 
         if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
-            try {
-                await audioContextRef.current.resume();
-            } catch (e) {
-                console.error("AudioContext resume failed:", e);
-            }
+            try { await audioContextRef.current.resume(); } catch (e) { console.error(e); }
         }
         
         setCurrentAlbum(album);
@@ -380,10 +463,9 @@ export const MusicProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             audio.load();
             video.load();
             await audio.play();
-            video.play().catch(e => console.warn("Background video failed to play", e));
+            video.play().catch(e => console.warn(e));
             setIsPlaying(true);
         } catch (error) {
-            console.error("Error playing track:", error);
             setIsPlaying(false);
         }
     }, [setupAudioContext]);
@@ -405,10 +487,9 @@ export const MusicProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         } else {
             try {
                 await audio.play();
-                video.play().catch(e => console.warn("Background video failed to play", e));
+                video.play().catch(e => console.warn(e));
                 setIsPlaying(true);
             } catch (error) {
-                console.error("Error resuming playback:", error);
                 setIsPlaying(false);
             }
         }
@@ -426,7 +507,6 @@ export const MusicProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         if (!currentAlbum || !currentTrack) return;
         const currentIndex = currentAlbum.tracks.findIndex(t => t.title === currentTrack.title);
         const prevIndex = (currentIndex - 1 + currentAlbum.tracks.length) % currentAlbum.tracks.length;
-        // Fix: Changed nextIndex to prevIndex to correctly play the previous track.
         await playTrack(currentAlbum, currentAlbum.tracks[prevIndex]);
     }, [currentAlbum, currentTrack, playTrack]);
     

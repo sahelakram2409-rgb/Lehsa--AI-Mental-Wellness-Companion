@@ -3,11 +3,8 @@ import React from 'react';
 interface IconProps {
   className?: string;
   isActive?: boolean;
-  // Fix: Added style property to allow passing CSS styles to icon components.
   style?: React.CSSProperties;
 }
-
-// NEW, FINAL, REDESIGNED ICON SET for a clean, professional, and minimalist aesthetic.
 
 const IconGlowFilter = () => (
     <filter id="icon-glow" x="-50%" y="-50%" width="200%" height="200%">
@@ -74,20 +71,14 @@ export const ChatIcon: React.FC<IconProps> = ({ className, isActive, style }) =>
 export const MusicIcon: React.FC<IconProps> = ({ className, isActive, style }) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28" className={className} style={{ overflow: 'visible', ...style }}>
         <defs>
-            {/* A more advanced filter to create a bi-color neon glow effect */}
             <filter id="neon-music-glow-v2" x="-150%" y="-150%" width="400%" height="400%">
                 <feGaussianBlur in="SourceAlpha" stdDeviation={isActive ? "2" : "1.5"} result="blur" />
-                
-                {/* Pink glow shifted left */}
                 <feFlood floodColor="#f472b6" result="pink-color" />
                 <feComposite in="pink-color" in2="blur" operator="in" result="pink-blur" />
                 <feOffset in="pink-blur" dx="-2" dy="0" result="pink-glow-offset" />
-                
-                {/* Blue glow shifted right */}
                 <feFlood floodColor="#60a5fa" result="blue-color" />
                 <feComposite in="blue-color" in2="blur" operator="in" result="blue-blur" />
                 <feOffset in="blue-blur" dx="2" dy="0" result="blue-glow-offset" />
-
                 <feMerge>
                     <feMergeNode in="pink-glow-offset"/>
                     <feMergeNode in="blue-glow-offset"/>
@@ -95,22 +86,11 @@ export const MusicIcon: React.FC<IconProps> = ({ className, isActive, style }) =
                 </feMerge>
             </filter>
         </defs>
-        <g 
-            filter="url(#neon-music-glow-v2)" 
-            transform="translate(4, 3.5)" 
-        >
-            <path 
-                d="M7 3v9a3.5 3.5 0 100 7a3.5 3.5 0 100-7 M15 3v9a3.5 3.5 0 100 7a3.5 3.5 0 100-7 M7 3h8"
-                stroke="#ffffff" 
-                strokeWidth="2.5" 
-                fill="none" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
-            />
+        <g filter="url(#neon-music-glow-v2)" transform="translate(4, 3.5)">
+            <path d="M7 3v9a3.5 3.5 0 100 7a3.5 3.5 0 100-7 M15 3v9a3.5 3.5 0 100 7a3.5 3.5 0 100-7 M7 3h8" stroke="#ffffff" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
         </g>
     </svg>
 );
-
 
 export const MeditationIcon: React.FC<IconProps> = ({ className, isActive, style }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill={isActive ? 'currentColor' : 'none'} viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} style={style}>
@@ -132,8 +112,6 @@ export const ProfileIcon: React.FC<IconProps> = ({ className, isActive, style })
     </svg>
 );
 
-// UNCHANGED ICONS BELOW
-
 export const SendIcon: React.FC<IconProps> = ({ className, style }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
         <path d="M6 12 3.269 3.125A5.969 5.969 0 0 1 21.485 12 5.97 5.97 0 0 1 3.27 20.875L6 12Zm0 0h12.75" />
@@ -146,8 +124,6 @@ export const RestartIcon: React.FC<IconProps> = ({ className, style }) => (
     </svg>
 );
 
-
-// PIN ICON: Replaced with a more robust "thumbtack" design to prevent rendering glitches.
 export const PinIcon: React.FC<IconProps & { isPinned?: boolean }> = ({ className, isPinned, style }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill={isPinned ? 'currentColor' : 'none'} viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} style={style}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 17.25V3.75m0 13.5-3.75-3.75M12 17.25l3.75-3.75M3 3h18" />

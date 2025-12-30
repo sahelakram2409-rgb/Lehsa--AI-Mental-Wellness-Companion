@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, createRef } from 'react';
 import { AppProvider, MusicProvider, useAppContext } from './context/AppContext';
 import { Screen, screenOrder } from './types';
@@ -15,6 +16,9 @@ import ProfileScreen from './screens/ProfileScreen';
 import BottomNav from './components/BottomNav';
 import GlobalMusicPlayer from './components/GlobalMusicPlayer';
 import GuidedTour from './components/GuidedTour';
+import GrowthToast from './components/GrowthToast';
+import Confetti from './components/Confetti';
+import LevelUpModal from './components/LevelUpModal';
 
 const screens: Record<Screen, React.FC> = {
   [Screen.Home]: HomeScreen,
@@ -38,16 +42,15 @@ const screenThemes: Record<Screen, string> = {
     [Screen.Profile]: 'sunrise-mode',
 };
 
-const ANIMATION_DURATION = 400; // Must match CSS animation duration
+const ANIMATION_DURATION = 400;
 
 const AppContent: React.FC = () => {
     const { 
         activeScreen,
         setActiveScreen,
         isOnboardingComplete, 
-        goals,
-        markReminderAsShown,
         globalTheme,
+        confettiTrigger
     } = useAppContext();
     const [showSplash, setShowSplash] = useState(true);
     const [isFadingOut, setIsFadingOut] = useState(false);
@@ -89,55 +92,13 @@ const AppContent: React.FC = () => {
         }
     }, [activeScreen, transitionInfo.currentScreen]);
 
-    const isToday = (isoDate?: string) => {
-        if (!isoDate) return false;
-        const date = new Date(isoDate);
-        const today = new Date();
-        return date.getDate() === today.getDate() &&
-               date.getMonth() === today.getMonth() &&
-               date.getFullYear() === today.getFullYear();
-    };
-
     useEffect(() => {
         const timer = setTimeout(() => {
             setIsFadingOut(true);
             setTimeout(() => setShowSplash(false), 500);
-        }, 3200); // Increased duration for animations
+        }, 3200);
         return () => clearTimeout(timer);
     }, []);
-
-    useEffect(() => {
-        if (!isOnboardingComplete || Notification.permission !== 'granted') return;
-
-        const checkReminders = () => {
-            const now = new Date();
-            const todayDateStr = now.toISOString().split('T')[0];
-
-            goals.forEach(goal => {
-                const isDailyActiveGoal = goal.type === 'daily' && goal.status === 'Active';
-                const hasReminder = !!goal.reminderTime;
-                const notCompletedToday = !isToday(goal.lastCompleted);
-                const notificationNotShownToday = goal.reminderShownForDate !== todayDateStr;
-
-                if (isDailyActiveGoal && hasReminder && notCompletedToday && notificationNotShownToday) {
-                    const [hours, minutes] = goal.reminderTime!.split(':').map(Number);
-                    const reminderDateTime = new Date();
-                    reminderDateTime.setHours(hours, minutes, 0, 0);
-
-                    if (now > reminderDateTime) {
-                        new Notification('Lehsa Reminder', {
-                            body: `Time for your daily goal: "${goal.goalName}"`,
-                            icon: '/vite.svg',
-                        });
-                        markReminderAsShown(goal.goalName);
-                    }
-                }
-            });
-        };
-
-        checkReminders();
-    }, [isOnboardingComplete, goals, markReminderAsShown]);
-
 
     const handleTourComplete = () => {
         setShowTour(false);
@@ -148,19 +109,13 @@ const AppContent: React.FC = () => {
         const target = e.target as HTMLElement;
         if (target.closest('button, input, textarea, a, [data-no-swipe="true"], .global-music-player')) return;
         if (!isOnboardingComplete || showTour || transitionInfo.direction !== 'none') return;
-
         touchStartX.current = e.targetTouches[0].clientX;
         isSwiping.current = true;
-    };
-
-    const handleTouchMove = (e: React.TouchEvent) => {
-        if (!isSwiping.current) return;
     };
 
     const handleTouchEnd = (e: React.TouchEvent) => {
         if (!isSwiping.current || !isOnboardingComplete) return;
         isSwiping.current = false;
-        
         const endX = e.changedTouches[0].clientX;
         const deltaX = endX - touchStartX.current;
         const swipeThreshold = window.innerWidth / 4;
@@ -174,17 +129,10 @@ const AppContent: React.FC = () => {
             const nextIndex = (currentIndex + 1) % screenOrder.length;
             setActiveScreen(screenOrder[nextIndex]);
         }
-
-        touchStartX.current = 0;
     };
 
-    if (showSplash) {
-        return <SplashScreen isFadingOut={isFadingOut} />;
-    }
-
-    if (!isOnboardingComplete) {
-        return <OnboardingScreen />;
-    }
+    if (showSplash) return <SplashScreen isFadingOut={isFadingOut} />;
+    if (!isOnboardingComplete) return <OnboardingScreen />;
     
     const screensToRender = [transitionInfo.currentScreen];
     if (transitionInfo.previousScreen && transitionInfo.previousScreen !== transitionInfo.currentScreen) {
@@ -192,21 +140,21 @@ const AppContent: React.FC = () => {
     }
     
     const effectiveTheme = globalTheme || screenThemes[activeScreen];
-    const backgroundClass = `${effectiveTheme}-bg`;
 
     return (
         <div 
             className={`h-full w-full font-sans relative ${effectiveTheme}`}
             onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
         >
+            <Confetti trigger={confettiTrigger.active} type={confettiTrigger.type} />
+            <GrowthToast />
+            <LevelUpModal />
             <div className="absolute top-0 left-0 w-full h-full z-10 overflow-hidden">
                  {screensToRender.map((screen) => {
                     const ScreenComponent = screens[screen];
                     const isCurrent = screen === transitionInfo.currentScreen;
                     const isPrevious = screen === transitionInfo.previousScreen;
-                    
                     const screenTheme = globalTheme || screenThemes[screen];
 
                     let animationClass = '';
@@ -220,10 +168,7 @@ const AppContent: React.FC = () => {
                         <div
                             key={screen}
                             className={`absolute inset-0 ${animationClass} ${screenTheme} ${screenTheme}-bg`}
-                            style={{ 
-                                pointerEvents: isCurrent ? 'auto' : 'none',
-                                zIndex: isCurrent ? 2 : 1
-                            }}
+                            style={{ pointerEvents: isCurrent ? 'auto' : 'none', zIndex: isCurrent ? 2 : 1 }}
                         >
                             <ScreenComponent />
                         </div>

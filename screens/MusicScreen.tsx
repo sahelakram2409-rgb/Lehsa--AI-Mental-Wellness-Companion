@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useMusicContext, useAppContext } from '../context/AppContext';
-import { Album, Track } from '../types';
+import { Album, Track, Screen } from '../types';
 
 const cosmicCoverArt = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImNvc21pY0dyYWQiIHgxPSIwJSIgeTE9IjEwMCUiIHgyPSIwJSIgeTI9IjAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdHlsZT0ic3RvcC1jb2xvcjojMWQxYTNkOyIgLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiMzMDJiNjM7IiAvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSJ1cmwoI2Nvc21pY0dyYWQpIiAvPjxwYXRoIGQ9Ik0xMCw5MCBRNDAsNzAgNTAsNDAgQzYwLDEwIDgwLDIwIDkwLDQwIiBzdHJva2U9IiM4MTg4Zjg3MCIgc3Ryb2tlLXdpZHRoPSI0IiBmaWxsPSJub25lIiAvPjxjaXJjbGUgY3g9IjMwIiBjeT0iMzAiIHI9IjIiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjgiLz48Y2lyY2xlIGN4PSI3MCIgY3k9IjYwIiByPSIzIiBmaWxsPSIjYTViNGZjIiBvcGFjaXR5PSIwLjkiLz48Y2lyY2xlIGN4PSI0MCIgY3k9IjcwIiByPSIxIiBmaWxsPSJ3aGl0ZSIgb3BhY2l0eT0iMC43IiAvPjwvc3ZnPg==';
 const oceanicCoverArt = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9Im9jZWFuR3JhZCIgeDE9IjAlIiB5MT0iMCUiIHgyPSIwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiMxZjQyNjM7IiAvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3R5bGU9InNtopb3AtY29sb3I6IzJhM2E0YTsiIC8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZGh0PSIxMDAiIGZpbGw9InVybCgjb2NlYW5HcmFkKSIgLz48cGF0aCBkPSJNLTEwLDUwIFEyNSwzNSA1MCw1MCBUMTEwLDUwIiBzdHJva2U9InJnYmEoMTM1LCAyMDYsIDI1MCwgMC41KSIgc3Ryb2tlLXdpZHRoPSI0IiBmaWxsPSJub25lIiAvPjxwYXRoIGQ9Ik0tMTAsNjAgUTI1LDc1IDUwLDYwIFQxMTAsNjAiIHN0cm9rZT0icmdiYSgxMzUsIDIwNiwgMjUwLCAwLjMpIiBzdHJva2Utd2lkdGg9IjMiIGZpbGw9Im5vbmUiIC8+PGNpcmNsZSBjeD0iMjAiIGN5PSI3NSIgcj0iMyIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIiAvPjxjaXJjbGUgY3g9IjgwIiBjeT0iODUiIHI9IjIiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4xKSIgLz48L3N2Zz4=';
@@ -128,7 +128,7 @@ const AudioVisualizer: React.FC = () => {
 
 const MusicScreen: React.FC = () => {
   const { playTrack, currentTrack, isPlaying } = useMusicContext();
-  const { logUserAction } = useAppContext();
+  const { logUserAction, getRealmMoodText } = useAppContext();
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
 
   const handlePlayTrack = (album: Album, track: Track) => {
@@ -197,9 +197,10 @@ const MusicScreen: React.FC = () => {
 
   return (
     <div className="h-full w-full flex flex-col p-6 relative overflow-x-hidden text-[--text-primary]" style={{ paddingTop: `calc(2.5rem + env(safe-area-inset-top, 0px))` }}>
-      <header className="text-center z-10 mb-6 flex-shrink-0">
+      <header className="text-center z-10 mb-6 flex-shrink-0 animate-fade-in-up">
         <h2 className="font-light text-sm tracking-widest uppercase opacity-80 text-[--text-secondary]">The Starlight Realm</h2>
         <h1 className="font-sans text-3xl font-bold opacity-90 text-[--text-header]">Calming Music</h1>
+        <p className="text-xs font-semibold text-[--accent-color] mt-1">{getRealmMoodText(Screen.Music)}</p>
       </header>
       
       <main className="z-10 flex-grow w-full max-w-2xl mx-auto overflow-y-auto pr-1" style={{ paddingBottom: `calc(7rem + env(safe-area-inset-bottom, 0px))` }}>

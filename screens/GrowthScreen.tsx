@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { Goal } from '../types';
+import { Goal, Screen } from '../types';
 import { PinIcon, TrashIcon, BellIcon, PlusIcon, ChevronRightIcon, FireIcon, StarIcon } from '../components/Icons';
+import Confetti from '../components/Confetti';
 
 // Helper function to check if a date is today
 const isToday = (isoDate?: string) => {
@@ -31,18 +33,50 @@ const CosmicBackground = React.memo(() => {
 
 
 const GrowthScreen: React.FC = () => {
-    const { goals, addGoal, updateGoalStatus, toggleDailyGoalCompletion, deleteGoal, togglePinGoal, setGoalReminder } = useAppContext();
+    const { goals, addGoal, updateGoalStatus, toggleDailyGoalCompletion, deleteGoal, togglePinGoal, setGoalReminder, getRealmMoodText, feeling } = useAppContext();
     const [newGoal, setNewGoal] = useState('');
     const [goalType, setGoalType] = useState<'daily' | 'single'>('daily');
     const [reminderModalGoal, setReminderModalGoal] = useState<Goal | null>(null);
     const [reminderTime, setReminderTime] = useState('');
     const [isCompletedVisible, setIsCompletedVisible] = useState(false);
+    
+    // State to force a re-render when the day changes
+    const [todayKey, setTodayKey] = useState(new Date().toDateString());
+
+    // Celebration States
+    const [showConfetti, setShowConfetti] = useState(false);
+    const [celebrationGoal, setCelebrationGoal] = useState<string | null>(null);
+
+    // Midnight Refresh Logic: Ensures UI updates automatically at 12 AM
+    useEffect(() => {
+        const updateAtMidnight = () => {
+            const now = new Date();
+            const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+            const timeUntilMidnight = tomorrow.getTime() - now.getTime();
+
+            return setTimeout(() => {
+                setTodayKey(new Date().toDateString());
+                updateAtMidnight(); // Schedule next day
+            }, timeUntilMidnight + 100); // Add tiny buffer
+        };
+
+        const timer = updateAtMidnight();
+        return () => clearTimeout(timer);
+    }, []);
 
     useEffect(() => {
         if (reminderModalGoal) {
             setReminderTime(reminderModalGoal.reminderTime || '');
         }
     }, [reminderModalGoal]);
+
+    const triggerCelebration = (goalName: string) => {
+        setShowConfetti(false);
+        setTimeout(() => {
+            setShowConfetti(true);
+            setCelebrationGoal(goalName);
+        }, 10);
+    };
 
     const handleAddGoal = () => {
         if (newGoal.trim()) {
@@ -72,7 +106,6 @@ const GrowthScreen: React.FC = () => {
         setReminderModalGoal(null);
     };
 
-
     const sortedGoals = useMemo(() => {
         return [...goals].sort((a, b) => {
             if (a.isPinned && !b.isPinned) return -1;
@@ -83,10 +116,20 @@ const GrowthScreen: React.FC = () => {
         });
     }, [goals]);
     
-    const activeGoals = sortedGoals.filter(g => g.status === 'Active');
-    const completedGoals = sortedGoals.filter(g => g.status === 'Completed');
+    // Note: uses todayKey to ensure these filter results update on date change
+    const activeGoals = useMemo(() => sortedGoals.filter(g => g.status === 'Active'), [sortedGoals, todayKey]);
+    const completedGoals = useMemo(() => sortedGoals.filter(g => g.status === 'Completed'), [sortedGoals]);
+
+    const getCelebrationMessage = () => {
+        if (feeling < 35) return "Every small victory counts. Proud of you.";
+        if (feeling > 75) return "UNSTOPPABLE! You're crushing it!";
+        return "Incredible progress! Keep that momentum going.";
+    };
 
     const GoalItem: React.FC<{ goal: Goal }> = ({ goal }) => {
+        // Daily habits reset visually when todayKey (date) changes
+        const isActuallyCompleted = (goal.type === 'daily' && isToday(goal.lastCompleted)) || goal.status === 'Completed';
+
         const progressData = useMemo(() => {
             if (goal.type !== 'single' || goal.status !== 'Active') return null;
             const now = new Date().getTime();
@@ -117,12 +160,15 @@ const GrowthScreen: React.FC = () => {
                 const isCompleted = isToday(goal.lastCompleted);
                 return (
                     <button 
-                        onClick={() => toggleDailyGoalCompletion(goal.goalName)}
-                        className={`w-6 h-6 rounded-full flex items-center justify-center mr-3 flex-shrink-0 border-2 transition-all duration-300 ${!isCompleted ? 'border-white/50 hover:border-white' : ''}`}
+                        onClick={() => {
+                            if (!isCompleted) triggerCelebration(goal.goalName);
+                            toggleDailyGoalCompletion(goal.goalName);
+                        }}
+                        className={`w-6 h-6 rounded-full flex items-center justify-center mr-3 flex-shrink-0 border-2 transition-all duration-300 ${!isCompleted ? 'border-white/50 hover:border-white' : ''} active:scale-125`}
                         style={{ backgroundColor: isCompleted ? 'var(--accent-color)' : 'transparent', borderColor: isCompleted ? 'var(--accent-color)' : '' }}
                         aria-label={`Mark ${goal.goalName} as completed for today`}
                     >
-                        {isCompleted && <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                        {isCompleted && <svg className="w-4 h-4 text-white animate-modal-in" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                     </button>
                 );
             }
@@ -130,8 +176,11 @@ const GrowthScreen: React.FC = () => {
             if (goal.type === 'single') {
                 return (
                     <button 
-                        onClick={() => updateGoalStatus(goal.goalName, 'Completed')}
-                        className={`w-6 h-6 rounded-md flex items-center justify-center mr-3 flex-shrink-0 border-2 border-white/50 hover:border-white transition-all duration-300`}
+                        onClick={() => {
+                            triggerCelebration(goal.goalName);
+                            updateGoalStatus(goal.goalName, 'Completed');
+                        }}
+                        className={`w-6 h-6 rounded-md flex items-center justify-center mr-3 flex-shrink-0 border-2 border-white/50 hover:border-white transition-all duration-300 active:scale-125`}
                         aria-label={`Mark ${goal.goalName} as completed`}
                     />
                 );
@@ -141,12 +190,23 @@ const GrowthScreen: React.FC = () => {
         };
 
         return (
-            <div className={`glassmorphism p-3.5 rounded-xl flex flex-col transition-all duration-300 animate-fade-in-up text-[--text-on-glass] ${goal.status === 'Completed' ? 'opacity-60' : ''}`}>
+            <div className={`glassmorphism p-3.5 rounded-xl flex flex-col transition-all duration-500 animate-fade-in-up text-[--text-on-glass] ${isActuallyCompleted ? 'opacity-50 scale-[0.98]' : 'hover:scale-[1.01] active:scale-[0.99]'}`}>
                 <div className="flex items-center w-full">
                     {renderActionButton()}
-                    <p className={`flex-grow font-semibold ${ (isToday(goal.lastCompleted) && goal.type === 'daily') || goal.status === 'Completed' ? 'line-through opacity-70' : '' }`}>
-                        {goal.goalName}
-                    </p>
+                    <div className="flex-grow relative overflow-hidden flex items-center">
+                        <p className={`font-semibold transition-all duration-500 ${ isActuallyCompleted ? 'opacity-30' : '' }`}>
+                            {goal.goalName}
+                        </p>
+                        {/* Organic Hand-Drawn Strike-Through Effect */}
+                        <div 
+                            className={`absolute left-0 top-[52%] h-[2px] rounded-full transition-all duration-[600ms] ease-[cubic-bezier(0.65,0,0.35,1)] ${isActuallyCompleted ? 'w-full opacity-60' : 'w-0 opacity-0'}`} 
+                            style={{ 
+                                backgroundColor: 'var(--accent-color)',
+                                transform: 'translateY(-50%) rotate(-0.5deg)',
+                                boxShadow: isActuallyCompleted ? '0 0 8px var(--glow-color)' : 'none'
+                            }}
+                        />
+                    </div>
                     <div className="flex items-center space-x-2 ml-2">
                          {goal.status === 'Active' && (
                             <>
@@ -179,7 +239,7 @@ const GrowthScreen: React.FC = () => {
                 {goal.type === 'daily' && goal.status === 'Active' && (
                     <div className="mt-2.5 pl-9 w-full flex items-center space-x-4 text-xs font-semibold" style={{ color: 'var(--accent-color)' }}>
                         <div className="flex items-center space-x-1" title="Current Streak">
-                            <FireIcon className="w-4 h-4 text-orange-400" />
+                            <FireIcon className={`w-4 h-4 ${isToday(goal.lastCompleted) ? 'text-orange-400 animate-pulse' : 'text-slate-400'}`} />
                             <span>{goal.currentStreak || 0} Days</span>
                         </div>
                         <div className="flex items-center space-x-1 opacity-80" title="Longest Streak">
@@ -194,13 +254,16 @@ const GrowthScreen: React.FC = () => {
 
     return (
         <div className="h-full w-full flex flex-col p-6 relative overflow-x-hidden text-[--text-primary]" style={{ paddingTop: `calc(2.5rem + env(safe-area-inset-top, 0px))` }}>
+             <Confetti trigger={showConfetti} />
+
              <div className="absolute inset-0 z-0 pointer-events-none">
                 <CosmicBackground />
             </div>
 
-            <header className="text-center z-10 mb-6 flex-shrink-0">
+            <header className="text-center z-10 mb-6 flex-shrink-0 animate-fade-in-up">
                 <h2 className="font-light text-sm tracking-widest uppercase opacity-80 text-[--text-secondary]">The Cosmic Realm</h2>
                 <h1 className="font-sans text-3xl font-bold opacity-90 text-[--text-header]">Personal Growth</h1>
+                <p className="text-xs font-semibold text-[--accent-color] mt-1">{getRealmMoodText(Screen.Growth)}</p>
             </header>
             
             <main className="z-10 flex-grow flex flex-col w-full max-w-md mx-auto overflow-y-auto pr-1" style={{ paddingBottom: `calc(7rem + env(safe-area-inset-bottom, 0px))` }}>
@@ -240,7 +303,7 @@ const GrowthScreen: React.FC = () => {
                 <div className="space-y-3">
                     <h3 className="font-sans font-semibold text-lg pl-1" style={{ color: 'var(--accent-color)' }}>Active Intentions</h3>
                     {activeGoals.length > 0 ? (
-                        activeGoals.map(goal => <GoalItem key={goal.goalName} goal={goal} />)
+                        activeGoals.map(goal => <GoalItem key={goal.goalName + todayKey} goal={goal} />)
                     ) : (
                         <div className="text-center opacity-70 glassmorphism p-4 rounded-xl">
                             <p>No active goals yet.</p>
@@ -256,7 +319,7 @@ const GrowthScreen: React.FC = () => {
                             className="w-full flex justify-between items-center text-left glassmorphism p-3.5 rounded-xl transition-colors hover:bg-white/10"
                         >
                             <h3 className="font-sans font-semibold text-lg" style={{ color: 'var(--accent-color)' }}>
-                                Completed ({completedGoals.length})
+                                Past Victories ({completedGoals.length})
                             </h3>
                             <ChevronRightIcon className={`w-6 h-6 transition-transform duration-300 ${isCompletedVisible ? 'rotate-90' : 'rotate-0'}`} style={{ color: 'var(--accent-color)' }} />
                         </button>
@@ -272,6 +335,28 @@ const GrowthScreen: React.FC = () => {
                     </div>
                 )}
             </main>
+
+            {/* Celebration Modal */}
+            {celebrationGoal && (
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[110] flex items-center justify-center p-6 animate-fade-in-up">
+                    <div className="glassmorphism rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl text-center border-t border-white/30 animate-modal-in">
+                        <div className="w-20 h-20 bg-gradient-to-br from-yellow-300 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl shadow-orange-500/20">
+                            <StarIcon className="w-10 h-10 text-white" />
+                        </div>
+                        <h2 className="text-2xl font-black text-[--text-on-glass] mb-2 leading-tight">Achievement Unlocked!</h2>
+                        <p className="text-[--accent-color] font-bold text-sm uppercase tracking-widest mb-4">"{celebrationGoal}"</p>
+                        <p className="text-base text-[--text-on-glass]/80 italic mb-8">
+                           {getCelebrationMessage()}
+                        </p>
+                        <button 
+                            onClick={() => setCelebrationGoal(null)}
+                            className="w-full bg-[--accent-color] text-white py-4 rounded-2xl font-black text-lg shadow-lg active:scale-95 transition-all"
+                        >
+                            Continue Shining
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {reminderModalGoal && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">

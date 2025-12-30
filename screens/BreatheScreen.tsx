@@ -3,6 +3,7 @@ import { useAppContext } from '../context/AppContext';
 import { getMeditationAudio } from '../services/geminiService';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { RestartIcon } from '../components/Icons';
+import { Screen } from '../types';
 
 // Helper functions for audio decoding
 function decode(base64: string) {
@@ -95,7 +96,7 @@ const BackgroundElements: React.FC = React.memo(() => (
 ));
 
 const BreatheScreen: React.FC = () => {
-  const { incrementMeditationCount, logUserAction } = useAppContext();
+  const { incrementMeditationCount, logUserAction, getRealmMoodText } = useAppContext();
   const [loadingMeditationId, setLoadingMeditationId] = useState<string | null>(null);
   const [activeMeditation, setActiveMeditation] = useState<Meditation | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -255,9 +256,10 @@ const BreatheScreen: React.FC = () => {
             <BackgroundElements />
         </div>
 
-        <header className="text-center z-10 mb-8 flex-shrink-0">
+        <header className="text-center z-10 mb-8 flex-shrink-0 animate-fade-in-up">
             <h2 className="font-light text-sm tracking-widest uppercase opacity-80 text-[--text-secondary]">The Ocean Realm</h2>
             <h1 className="font-sans text-3xl font-bold opacity-90 text-[--text-header]">Guided Meditation</h1>
+            <p className="text-xs font-semibold text-[--accent-color] mt-1">{getRealmMoodText(Screen.Meditation)}</p>
         </header>
 
         <main className="z-10 flex-grow flex flex-col items-center justify-center text-center w-full max-w-md overflow-y-auto" style={{ paddingBottom: `calc(7rem + env(safe-area-inset-bottom, 0px))` }}>
