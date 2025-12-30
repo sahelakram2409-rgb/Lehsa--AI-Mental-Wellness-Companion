@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { getMeditationAudio } from '../services/geminiService';
@@ -44,6 +45,7 @@ interface Meditation {
   };
 }
 
+// Using Google Actions sounds which are very stable and CORS-friendly
 const meditations: Meditation[] = [
   {
     id: 'calm',
@@ -52,8 +54,8 @@ const meditations: Meditation[] = [
     script: "Welcome. Find a comfortable position. [pause:3] Let's begin. [inhale:4] Breathe in slowly... [hold:5] Hold the breath... [exhale:6] And release gently... [pause:3] Again. [inhale:4] Breathe in... [hold:5] And hold... [exhale:6] Breathe out... [pause:3] One more time. [inhale:4] Deep breath in... [hold:5] Hold... [exhale:6] And let go completely. [pause:2] You are calm.",
     orbClass: 'orb-calm',
     soundscape: {
-        name: 'Gentle Waves',
-        audioSrc: '/audio/ocean-waves.mp3'
+        name: 'Ocean Waves',
+        audioSrc: 'https://actions.google.com/sounds/v1/water/ocean_waves.ogg'
     }
   },
   {
@@ -64,7 +66,7 @@ const meditations: Meditation[] = [
     orbClass: 'orb-focus',
     soundscape: {
         name: 'Forest Ambience',
-        audioSrc: '/audio/forest-ambience.mp3'
+        audioSrc: 'https://actions.google.com/sounds/v1/ambient/forest_ambience.ogg'
     }
   },
   {
@@ -75,7 +77,7 @@ const meditations: Meditation[] = [
     orbClass: 'orb-gratitude',
     soundscape: {
         name: 'Morning Birds',
-        audioSrc: '/audio/morning-birds.mp3'
+        audioSrc: 'https://actions.google.com/sounds/v1/ambient/morning_birds.ogg'
     }
   },
   {
@@ -85,8 +87,8 @@ const meditations: Meditation[] = [
     script: "Settle into a comfortable, resting position. [pause:4] Let go of the day's events. They are in the past. [pause:6] Bring your attention to your body. [pause:4] Feel the weight of it, supported and safe. [inhale:5] Take a slow, deep breath in... [hold:3] hold it gently... [exhale:7] and as you breathe out, release all tension. [pause:5] Let your muscles soften. [pause:5] Let your mind quiet down. [pause:8] You are ready for sleep. [pause:5] Rest now.",
     orbClass: 'orb-sleep',
     soundscape: {
-        name: 'Night Crickets',
-        audioSrc: '/audio/night-crickets.mp3'
+        name: 'Soft Wind',
+        audioSrc: 'https://actions.google.com/sounds/v1/weather/soft_wind.ogg'
     }
   },
 ];
@@ -117,8 +119,15 @@ const BreatheScreen: React.FC = () => {
     }
     if (!soundscapeAudioRef.current) {
         soundscapeAudioRef.current = new Audio();
+        soundscapeAudioRef.current.crossOrigin = 'anonymous'; 
         soundscapeAudioRef.current.loop = true;
-        soundscapeAudioRef.current.volume = 0.3; // Subtle background volume
+        soundscapeAudioRef.current.volume = 0.3;
+        
+        // Error handling for soundscape
+        soundscapeAudioRef.current.onerror = (e) => {
+            console.error("Soundscape loading error:", e);
+            setError("The soundscape failed to load. You can still meditate with the guide.");
+        };
     }
     return () => {
       handleStopMeditation();
@@ -171,11 +180,6 @@ const BreatheScreen: React.FC = () => {
     setError(null);
     logUserAction('meditation_started', { title: meditation.title });
 
-
-    // Start background soundscape
-    soundscapeAudioRef.current.src = meditation.soundscape.audioSrc;
-    soundscapeAudioRef.current.play().catch(e => console.error("Error playing soundscape:", e));
-
     try {
       const cues: { action: string; duration: number; startTime: number; text: string; }[] = [];
       let cumulativeTime = 0;
@@ -189,6 +193,17 @@ const BreatheScreen: React.FC = () => {
 
       const base64Audio = await getMeditationAudio(`Say calmly: ${cleanScript}`);
       if (!base64Audio || !audioContextRef.current) throw new Error("Audio generation failed.");
+
+      // Set and load background soundscape
+      soundscapeAudioRef.current.src = meditation.soundscape.audioSrc;
+      soundscapeAudioRef.current.load();
+      
+      const playPromise = soundscapeAudioRef.current.play();
+      if (playPromise !== undefined) {
+          playPromise.catch(e => {
+              console.warn("Background soundscape play failed or was blocked:", e);
+          });
+      }
 
       setActiveMeditation(meditation);
 
@@ -234,7 +249,7 @@ const BreatheScreen: React.FC = () => {
 
     } catch (e) {
       console.error("Error starting meditation:", e);
-      setError("Sorry, couldn't start the meditation. Please try again.");
+      setError("Unable to load meditation. Please check your internet connection.");
       if (soundscapeAudioRef.current) {
         soundscapeAudioRef.current.pause();
       }
@@ -282,7 +297,7 @@ const BreatheScreen: React.FC = () => {
                   </button>
                 </div>
               ))}
-              {error && <p className="text-red-300 mt-4">{error}</p>}
+              {error && <p className="text-red-300 mt-4 text-sm font-bold bg-black/20 p-2 rounded-lg">{error}</p>}
             </div>
           ) : (
             <div className="animate-fade-in-up flex flex-col items-center">
@@ -312,6 +327,7 @@ const BreatheScreen: React.FC = () => {
                     Stop Session
                 </button>
               </div>
+              {error && <p className="text-red-300 mt-4 text-xs font-bold bg-black/20 p-2 rounded-lg">{error}</p>}
             </div>
           )}
         </main>
